@@ -158,7 +158,7 @@ bool mapContains(Map map, MapKeyElement element)
 
 MapResult mapPut(Map map, MapKeyElement keyElement, MapDataElement dataElement)
 {
-  if ((NULL == map) || (NULL == keyElement)) {
+  if ((NULL == map) || (NULL == keyElement) || (NULL == dataElement)) {
     return MAP_NULL_ARGUMENT;
   }
 
@@ -264,7 +264,7 @@ MapKeyElement mapGetFirst(Map map)
   // next value to be enumerated is the second
   map->current = map->top->next; 
 
-  return map->top->key;
+  return map->copyKey(map->top->key);
 }
 
 MapKeyElement mapGetNext(Map map)
@@ -277,7 +277,7 @@ MapKeyElement mapGetNext(Map map)
   MapKeyElement key = map->current->key;
   map->current = map->current->next;
 
-  return key;
+  return map->copyKey(key);
 }
 
 MapResult mapClear(Map map)
