@@ -6,8 +6,8 @@
 typedef struct match_node_t *matchNode;
 
 /**
- * Creates a new matchNode and adds it as the next node for the provided
- * previous node
+ * Creates a new matchNode and adds it as the previous node for the provided
+ * next node
  * 
  * @param match Match to be added to the list
  * @param next matchNode to point to as next. May be NULL
@@ -25,6 +25,17 @@ matchNode newMatchNode(Match match, matchNode next);
  *    next matchNode (may be NULL)
  */
 matchNode nextMatchNode(matchNode node);
+
+/**
+ * returns the size of the list from the given node untill reaching NULL
+ * 
+ * @param list the list given
+ * @return 
+ *    how many nodes are in the list, 
+ *    0 if list is empty or NULL argument
+ */
+int getSize(matchNode list);
+
 
 /**
  * Get the Match from matchNode object
@@ -52,4 +63,5 @@ void matchNodeRemove(matchNode list, Match match);
  * @param destory_match if true, destorys the Match in the node as well
  */
 void matchNodeDestroy(matchNode node, bool destory_match);
+
 #endif // _MATCHNODE_H

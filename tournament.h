@@ -32,6 +32,7 @@ Tournament tournamentCreate(int id, const char *location, int max_games_per_play
  * @param match Match to be added
  * @return  
  *     CHESS_NULL_ARGUMENT - provided argument was NULL
+ *     CHESS_TOURNAMENT_ENDED - the tournament is over
  *     CHESS_GAME_ALREADY_EXIST - match with the same participants was already
  *                                added to the tournament
  *     CHESS_INVALID_MAX_GAMES - one of the particiapnts has already reached the
@@ -53,6 +54,19 @@ ChessResult tournamentAddMatch(Tournament tournament, Match match);
  *     CHESS_SUCCESS - player was removed successfully.
  */
 ChessResult tournamentRemovePlayer(Tournament tournament, int player_id);
+
+/**
+ * Removes a match from a tournament's matches list.
+ * If match wasn't in the tournament - nothing happens and the method will
+ * be considered successful.
+ * 
+ * @param tournament Tournament to remove the player from
+ * @param match Match to be removed
+ * @return 
+ *     CHESS_NULL_ARGUMENT - provided argument was NULL
+ *     CHESS_SUCCESS - match was removed successfully.
+ */
+ChessResult tournamentRemoveMatch(Tournament tournament, Match match);
 
 /**
  * Ends the current tournament and sets the winner.

@@ -28,6 +28,16 @@ Player playerCreate(int id);
 int playerGetId(Player player);
 
 /**
+ * Retrieves a player's list of matches
+ * 
+ * @param player Player in question
+ * @return 
+ *    first pointer to matches list 
+ *    NUll if provided player was NULL
+ */
+matchNode playerGetMatches(Player player);
+
+/**
  * Adds a match to player's record.
  * 
  * @param player Player in question
@@ -93,6 +103,6 @@ void playerDestroy(Player player, bool remove_from_tournaments);
  *    New exact copy of the provided Player
  *    NULL if memory allocation failed
  */
-MapDataElement playerCopy(MapDataElement original);
+Player playerCopy(Player original);
 
 #endif // PLAYER_H

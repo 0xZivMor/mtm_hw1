@@ -28,6 +28,21 @@ Match matchCreate(Player first_player,
                   Tournament tournament, 
                   int duration);
 
+
+/**
+ *retrieves the first player of the match
+ * @param match Match in question
+ * @return first player or NULL if recieves NULL arguments
+ */
+Player matchGetFirst(Match match);
+
+/**
+ *retrieves the second player of the match
+ * @param match Match in question
+ * @return second player or NULL if recieves NULL arguments
+ */
+Player matchGetSecond(Match match);
+
 /**
  * Sets the match winner.
  * 
@@ -40,6 +55,19 @@ Match matchCreate(Player first_player,
  *     CHESS_SUCCESS - winner was set successfully.
  */
 ChessResult matchSetWinner(Match match, Player winner);
+
+/**
+ * Sets the match winner.
+ * 
+ * @param match Match in question
+ * @param loser loser of the match. May be NULL for draw, but must be
+ *               one of the participants otherwise.
+ * @return
+ *     CHESS_NULL_ARGUMENT - provided match was NULL
+ *     CHESS_PLAYER_NOT_EXIST - provided loser is not one of the participants.
+ *     CHESS_SUCCESS - winner was set successfully.
+ */
+ChessResult matchSetLoser(Match match, Player loser);
 
 /**
  * Checks if the provided player is a participant in the match
@@ -90,6 +118,15 @@ void matchDestroy(Match match);
 Tournament matchGetTournament(Match match);
 
 /**
+ * checks if the players on both matches are the same
+ * @param match1 first match in question
+ * @param match2 second match in question
+ * @return true if players are the same, 
+ * false otherwie.
+ */
+bool isSamePlayers(Match match1, Match match2);
+
+/**
  * Compares Matches based on their tournament and participants.
  * Matches are regarded as "same" if they have the same tournament and
  * participants. If they defer is one of those properties, "greater match"
@@ -112,6 +149,6 @@ int matchCompare(Match match1, Match match2);
  *    New exact copy of the provided Match
  *    NULL if memory allocation failed
  */
-MapDataElement matchCopy(MapDataElement original);
+Match matchCopy(Match original);
 
 #endif // _MATCH_H
