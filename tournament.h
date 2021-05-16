@@ -60,7 +60,7 @@ ChessResult tournamentRemovePlayer(Tournament tournament, int player_id);
  * If match wasn't in the tournament - nothing happens and the method will
  * be considered successful.
  * 
- * @param tournament Tournament to remove the player from
+ * @param tournament Tournament to remove the match from
  * @param match Match to be removed
  * @return 
  *     CHESS_NULL_ARGUMENT - provided argument was NULL
@@ -109,7 +109,7 @@ ChessResult tournamentGetMatchesByPlayer(Tournament tournament,
 void tournamentDestroy(Tournament tournament);
 
 /**
- * Compares two tournaments based on their ids, in increasing order.
+ * Compares two tournaments based on their ids, in increasing order. Assuming both tournaments are not NULL
  * 
  * @param tournament1 first tournament to compare
  * @param tournament2 second tournament to compare
