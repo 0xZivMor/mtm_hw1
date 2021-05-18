@@ -1,255 +1,303 @@
 #include "tournament.h"
 #include "matchnode.h"
-#include "player.h"
-#include "map.h"
 #include "string.h"
+#include "utils.h"
+#include "map.h"
+#include <stdlib.h>
 
 struct tournament_t {
   int id;
   matchNode matches;
-  Map players;
+  Map scores;
   char *location;
   int max_matches_per_player;
-  int players_count;
   bool finished;
-  Player winner;
+  int winner;
 };
-static MapKeyElement copyId(MapKeyElement element);
-static void freeId(MapKeyElement element);
-static bool isLocationValid(const char *location)
-{
-  char* ptr = location;
-  if(*ptr < 'A' || *ptr > 'Z') //checking location begins with capital letter
-  {
-    return false;
-  }
-  ptr++;
-  while(*ptr)
-  {
-    if((*ptr < 'a' || *ptr > 'z') && *ptr != ' ')
-    {
-      return false;
-    }
-    ptr++;
-  }
-  return true;
-}
+
+/**
+ * Makes sure the both participants haven't reach the games limit in the 
+ * tournament yet
+ * 
+ * @param tournament Tournament in question
+ * @param player1 ID of first participant
+ * @param player2 ID of second participant
+ * @return CHESS_OUT_OF_MEMORY - memory error occured
+ *         CHESS_INVALID_MAX_GAMES - one of the particiapnts has already 
+ *                                   participated in maximum games allowed
+ *         CHESS_SUCCESS - match was added successfully.
+ */
+static ChessResult verifyGamesLimit(Tournament tournament,
+                                    int player1,
+                                    int player2);
+
+/**
+ * Calculates the player's score in the tournament according to the following
+ * key:
+ *    win: +2 points
+ *    draw: +1 point
+ *    loss: no change
+ * 
+ * @param tournament Tournament in question
+ * @param player ID of player in question
+ * @return >=0 player's score; 
+ *         <0 on memory error
+ */
+static int calcPlayerScore(Tournament tournament, int player);
 
 Tournament tournamentCreate(int id, const char *location, int max_games_per_player)
 {
-  //checking for incorrect parameters
-  if(id < 0 || max_games_per_player <= 0 || !isLocationValid(location))
-  {
+  // checking for incorrect parameters
+  if(!validateId(id) || !validateId(max_games_per_player) || 
+     !validateLocation(location)) {
     return NULL;
   }
   
   Tournament tournament = (Tournament) malloc(sizeof(*tournament));
-  if(tournament == NULL)
-  {
-    return NULL;
-  }
+  RETURN_NULL_ON_NULL(tournament)
+
   tournament->id = id;
   tournament->matches = NULL;
-  tournament->players =  mapCreate(playerCopy, 
-                             copyId, 
-                             playerDestroy, 
-                             freeId, 
-                             playerCompare);
-  if(tournament->players == NULL)
-  {
+  tournament->scores = mapCreate(copyInt, 
+                                 copyInt, 
+                                 freeInt, 
+                                 freeInt, 
+                                 idCompare);
+  RETURN_NULL_ON_NULL(tournament->scores)
+
+  int length = strlen(location) + 1;
+  char *new_loc = (char *)malloc(sizeof(char) * length);
+  
+  if(NULL == new_loc) {
+    tournamentDestroy(tournament);
     return NULL;
   }
-  tournament->players_count = 0;
-  int length = strlen(*location);
-  char* new_loc = (char*) malloc(sizeof(char) * length);
+
+  strcpy(new_loc, location);
+  new_loc[length] = '\0';
+
   tournament->location = new_loc;
   tournament->max_matches_per_player = max_games_per_player;
   tournament->finished = false;
   tournament->winner = NULL;
-  if(new_loc == NULL)
-  {
-    tournamentDestroy(tournament);
-    return NULL;
-  }
 }
 
 ChessResult tournamentAddMatch(Tournament tournament, Match match)
 {
-  if(tournament == NULL || match == NULL)
-  {
+  if(NULL == tournament || NULL == match) {
     return CHESS_NULL_ARGUMENT;
   }
-  if(tournament->finished == true)
-  {
+
+  if (tournamentIsEnded(tournament)) {
     return CHESS_TOURNAMENT_ENDED;
   }
-  if(mapContains(tournament->matches, match)) // match already in the tournament
-  {
+
+  // match already in the tournament
+  if(matchNodeInList(tournament->matches, match)) {
     return CHESS_GAME_ALREADY_EXISTS;
   }
-  //creating list of matches played in the tournament by the players in @param match
-  matchNode player1_matches;
-  matchNode player2_matches;
-  ChessResult first = tournamentGetMatchesByPlayer(tournament, matchGetFIrst(match), player1_matches);
-  ChessResult second = tournamentGetMatchesByPlayer(tournament, matchGetFIrst(match), player1_matches);
-  if(getSize(player1_matches) > tournament->max_matches_per_player || getSize(player2_matches) > tournament->max_matches_per_player)
-  //if the number of matches played by one (or both) of them is too much, abbort
-  {
-    matchNodeDestroy(player1_matches, false);
-    matchNodeDestroy(player2_matches, false);
-    return CHESS_INVALID_MAX_GAMES;
+
+  int player1 = matchGetFirst(match), player2 = matchGetSecond(match);
+  if (!tournamentIsParticipant(tournament, player1) ||
+      !tournamentIsParticipant(tournament, player2)) {
+    return CHESS_PLAYER_NOT_EXIST;
   }
-  //now adding the match to list of matches
-  if(newMatchNode(match, tournament->matches) == NULL)
-  {
-    matchNodeDestroy(player1_matches, false);
-    matchNodeDestroy(player2_matches, false);
+
+  switch (verifyGamesLimit(tournament, player1, player2)) {
+    case CHESS_OUT_OF_MEMORY:
+      return CHESS_OUT_OF_MEMORY;
+    case CHESS_INVALID_MAX_GAMES:
+      return CHESS_INVALID_MAX_GAMES;
+    default:
+      break;
+  }
+
+  matchNode new_node = matchNodeCreate(match, tournament->matches); 
+  if (NULL == new_node) {
     return CHESS_OUT_OF_MEMORY;
-  }
-  //now dealing with the players
-  Player first_player = matchGetFirst(match);
-  Player second_player = matchGetSecond(match);
-  if(first == CHESS_PLAYER_NOT_EXIST) //this is the first game in the tournament played by first_player
-  {
-    //adding the player to players map
-    first = mapPut(tournament->players, playerGetId(first_player), first_player);
-    if(first == CHESS_OUT_OF_MEMORY)
-    {
-      matchNodeDestroy(player1_matches, false);
-      matchNodeDestroy(player2_matches, false);
-      tournamentRemoveMatch(tournament, match);
-      return CHESS_OUT_OF_MEMORY;
-    }
-    tournament->players_count ++;
-    first = CHESS_PLAYER_NOT_EXIST; //flag to signify we added the first_player just now for the 1st time
-  }
-  //same with second_player
-  if(second == CHESS_PLAYER_NOT_EXIST)
-  {
-    //adding 2nd player to players map
-    second = mapPut(tournament->players, playerGetId(second_player), second_player);
-    if(second == CHESS_OUT_OF_MEMORY)
-    {
-      matchNodeDestroy(player1_matches, false);
-      matchNodeDestroy(player2_matches, false);
-      tournamentRemoveMatch(tournament, match);
-      if(first == CHESS_PLAYER_NOT_EXIST) //first_player was added now for the 1st time so he as well needs to be removed
-      {
-        tournamentRemovePlayer(tournament, playerGetId(first_player));
-      }
-      return CHESS_OUT_OF_MEMORY;
-    }
-   tournament->players_count ++;
-  }  
-  matchNodeDestroy(player1_matches, false);
-  matchNodeDestroy(player2_matches, false);
+  } 
+    
+  tournament->matches = new_node;
   return CHESS_SUCCESS;
 }
 
-ChessResult tournamentRemovePlayer(Tournament tournament, int player_id)
-{
-
-}
-
-ChessResult tournamentRemoveMatch(Tournament tournament, Match match);
-
 ChessResult tournamentEnd(Tournament tournament)
 {
-  if(tournament == NULL)
-  {
-    return CHESS_NULL_ARGUMENT;
-  }
-  Player current;
-  Player temp;
-  int max_result = -1;
-  int curr_result = 0;
-  matchNode games_played;
-  matchNode ptr;
-  ChessResult status;
-  //going over the players. for each player creating a matchnode list of his games and calculating result
-  MAP_FOREACH(Player,current, tournament->players)
-  {
-    tournamentGetMatchesByPlayer(tournament, current->id, games_played);
-    ptr = games_played;
-    while(ptr) //going over all games played by current
-    {
-      status = matchGetWinner(getMatchFromMatchNode(ptr),temp);
-      if(status == CHESS_SUCCESS)
-      {
-        if(playerCompare(current,temp) == 0 ) //if the winner of the match is current
-        {
-          curr_result += 2;
-        }
-        else if(temp == NULL) //there was a draw
-        {
-          curr_result == 1;
-        }
-      }
-      ptr = nextMatchNode(ptr);
-    }
-    if(curr_result > max_result) //replace winner if we got a better result
-    {
-      max_result = curr_result;
-      tournament->winner = current;
-    }
-    else if(curr_result == max_result) //if results are the same
-    {
-      if(playerGetId(tournament->winner) > playerGetId(current)) //chose the one with "lower" id
-      {
-        tournament->winner = current;
+  RETUN_RESULT_ON_NULL(tournament)
+
+  int *current_player_id, max_score = -1, *current_score;
+
+  // going over the players
+  MAP_FOREACH(int *, current_player_id, tournament->scores) {
+    current_score = (int *)mapGet(tournament->scores, (MapKeyElement)current_player_id);
+
+    // replace winner if we got a better result
+    if (current_score > max_score) {
+      max_score = current_score;
+      tournament->winner = *current_player_id;
+    } else if (current_score == max_score) {
+      // choose the one with lower id
+      if (tournament->winner > *current_player_id) {
+        tournament->winner = *current_player_id;
       }
     }
+    freeInt((MapKeyElement)current_player_id);
   }
-  tournament->finished = true; //updating status
+
+  tournament->finished = true; // updating status
   return CHESS_SUCCESS;
 }
 
 ChessResult tournamentGetMatchesByPlayer(Tournament tournament, 
                                          int player_id, 
-                                         matchNode *list);
+                                         matchNode *list)
+{
+  RETUN_RESULT_ON_NULL(tournament)
+
+  if (!tournamentIsParticipant(tournament, player_id)) {
+    *list = NULL;
+    return CHESS_PLAYER_NOT_EXIST;
+  }
+
+  // if a player exists in a tournament, it must participate in atleast one match
+
+  matchNode matches = tournament->matches, new_node = NULL;
+  
+  FOREACH_MATCH(matches) {
+    Match match = matchNodeGetMatch(matches);
+    if (matchIsParticipant(match, player_id)) {
+      new_node = matchNodeCreate(match, new_node);
+      if (NULL == new_node) {  // memory error
+        matchNodeDestroyList(*list, false);
+        *list = NULL;
+        return CHESS_OUT_OF_MEMORY;
+      }
+      *list = new_node;
+    }
+  }
+  return CHESS_SUCCESS;
+}
 
 void tournamentDestroy(Tournament tournament)
 {
-  if(tournament == NULL)
-  {
+  if(tournament == NULL) {
     return;
   }
-  matchNodeDestroy(tournament->matches, true);
-  mapDestroy(tournament->players);
-  playerDestroy(tournament->winner, false);
+
+  matchNodeDestroyList(tournament->matches, false);
+  mapDestroy(tournament->scores);
+  free(tournament->location);
   free(tournament);
 }
 
-int tournamentCompare(Tournament tournament1, Tournament tournament2)
+void tournamentDestroyMap(MapDataElement tournament)
 {
-  return tournament1->id - tournament2->id;
+  tournamentDestory((Tournament)tournament);
+}
+
+int tournamentCompare(MapKeyElement tournament1, MapKeyElement tournament2)
+{
+  COMPARE_NOT_NULL(tournament1, tournament2)
+
+  return *(int *)tournament1 - *(int *)tournament2;
 }
 
 bool tournamentIsEnded(Tournament tournament)
 {
-  if(tournament == NULL)
-  {
-    return NULL;
-  }
+  RETURN_NULL_ON_NULL(tournament)
+
   return tournament->finished;
 }
 
-Tournament tournamentCopy(Tournament original)
+bool tournamentIsParticipant(Tournament tournament, int player_id)
 {
-  if(original == NULL)
-  {
-    return NULL;
-  }
+  return mapContains(tournament->scores, (MapKeyElement)&player_id);
+}
+
+MapDataElement tournamentCopy(MapDataElement original_tournament)
+{
+  Tournament original = (Tournament) original_tournament;
+  RETURN_NULL_ON_NULL(original)
+  
   Tournament new_tournament;
-  new_tournament = tournamentCreate(original->id, original->location, original->max_matches_per_player);
-  if(new_tournament == NULL)
-  {
-    return NULL;
-  }
+  new_tournament = tournamentCreate(original->id, 
+                                    original->location, 
+                                    original->max_matches_per_player);
+  RETURN_NULL_ON_NULL(new_tournament)
+
   new_tournament->finished = original->finished;
-  new_tournament->players_count = original->players_count;
   new_tournament->winner = original->winner;
   new_tournament->matches = original->matches;
-  new_tournament->players = original->players;
+  new_tournament->scores = original->scores;
+  
   return new_tournament;
+}
+
+static ChessResult verifyGamesLimit(Tournament tournament,
+                                    int player1,
+                                    int player2)
+{
+  // creating list of matches played in the tournament by the players
+  matchNode player1_matches, player2_matches;
+  
+  ChessResult first = tournamentGetMatchesByPlayer(tournament,
+                                                   player1,
+                                                   &player1_matches);
+  if (CHESS_OUT_OF_MEMORY == first) {
+    return CHESS_OUT_OF_MEMORY;
+  }
+
+  ChessResult second = tournamentGetMatchesByPlayer(tournament,
+                                                    player2,
+                                                    &player2_matches);
+  if (CHESS_OUT_OF_MEMORY == second) {
+    matchNodeDestroyList(player1_matches, false);
+    return CHESS_OUT_OF_MEMORY;
+  }
+
+  ChessResult result = CHESS_SUCCESS;
+
+  // over the limit matches by atleast one of the participants
+  if (CHESS_SUCCESS == first && 
+      matchNodeGetSize(player1_matches) <= tournament->max_matches_per_player) {
+    result = CHESS_INVALID_MAX_GAMES;
+  }
+  if (CHESS_SUCCESS == second && 
+      matchNodeGetSize(player2_matches) <= tournament->max_matches_per_player) {
+    result = CHESS_INVALID_MAX_GAMES;
+  }
+
+  matchNodeDestroyList(player1_matches, false);
+  matchNodeDestroyList(player2_matches, false);
+  return result;
+}
+
+static int calcPlayerScore(Tournament tournament, int player)
+{
+  matchNode matches;
+  if (CHESS_OUT_OF_MEMORY == tournamentGetMatchesByPlayer(tournament, 
+                                                          player, 
+                                                          &matches)) {
+    return -1;
+  }
+  
+  matchNode current = matches;
+  int winner_id;
+  int score = 0;
+
+  FOREACH_MATCH(current) {
+    if (CHESS_SUCCESS == matchGetWinner(matchNodeGetMatch(current), &winner_id)) {
+      // draw
+      if (!winner_id) {
+        score += 1;
+
+      // player won the match
+      } else if (player == winner_id) {
+        score += 2;
+      }
+    }
+  }
+
+  matchNodeDestroyList(matches, false);
+  return score;
 }

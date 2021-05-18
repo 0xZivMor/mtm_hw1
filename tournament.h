@@ -1,8 +1,8 @@
 #ifndef _TOURNAMENT_H
 #define _TOURNAMENT_H
 
+#include "chessSystem.h"
 #include "matchnode.h"
-#include "player.h"
 #include "match.h"
 #include "utils.h"
 
@@ -14,10 +14,8 @@ typedef struct tournament_t *Tournament;
  * @param id tournament's id
  * @param location tournament's location
  * @param max_games_per_player maximum games allowed per player
- * @return 
- *    A new Tournament instance if all parameters are valid and all memory 
- *    allocation operation succeded.
- *    NULL otherwise.
+ * @return A new Tournament instance, if all parameters are valid and all 
+ *         memory allocation operation succeded. NULL otherwise.
  */
 Tournament tournamentCreate(int id, const char *location, int max_games_per_player);
 
@@ -30,30 +28,31 @@ Tournament tournamentCreate(int id, const char *location, int max_games_per_play
  * 
  * @param tournament tournament to add the match to
  * @param match Match to be added
- * @return  
- *     CHESS_NULL_ARGUMENT - provided argument was NULL
- *     CHESS_TOURNAMENT_ENDED - the tournament is over
- *     CHESS_GAME_ALREADY_EXIST - match with the same participants was already
- *                                added to the tournament
- *     CHESS_INVALID_MAX_GAMES - one of the particiapnts has already reached the
- *                               maximum games allowed
- *     CHESS_SUCCESS - match was added successfully.
+ * @return CHESS_NULL_ARGUMENT - provided argument was NULL;
+ *         CHESS_TOURNAMENT_ENDED - the tournament is over;
+ *         CHESS_GAME_ALREADY_EXIST - match with the same participants was 
+ *                                    already added to the tournament;
+ *         CHESS_PLAYER_NOT_EXIST - one of the players in the match wasn't
+ *                                  added to the tournament ahead of the
+ *                                  match; 
+ *         CHESS_INVALID_MAX_GAMES - one of the particiapnts has already 
+ *                                   reached the maximum games allowed;
+ *         CHESS_SUCCESS - match was added successfully.
  */
 ChessResult tournamentAddMatch(Tournament tournament, Match match);
 
 /**
  * Remove a player from a tournament. 
  * All matches the player participated in will be forfeited.
- * If player wasn't in the tournament - nothing happens and the method will
- * be considered successful.
+ * If player wasn't in the tournament, the function will be considered successful.
+ * If the tournament has ended or any of the parameters wasn't valid,
+ * nothing happens and the player won't be removed
  * 
  * @param tournament Tournament to remove the player from
  * @param int id of the player to be removed
- * @return 
- *     CHESS_NULL_ARGUMENT - provided argument was NULL
- *     CHESS_SUCCESS - player was removed successfully.
+ * @return true player was remove 
  */
-ChessResult tournamentRemovePlayer(Tournament tournament, int player_id);
+bool tournamentRemovePlayer(Tournament tournament, int player_id);
 
 /**
  * Removes a match from a tournament's matches list.
@@ -62,9 +61,8 @@ ChessResult tournamentRemovePlayer(Tournament tournament, int player_id);
  * 
  * @param tournament Tournament to remove the match from
  * @param match Match to be removed
- * @return 
- *     CHESS_NULL_ARGUMENT - provided argument was NULL
- *     CHESS_SUCCESS - match was removed successfully.
+ * @return CHESS_NULL_ARGUMENT - provided argument was NULL; 
+ *         CHESS_SUCCESS - match was removed successfully.
  */
 ChessResult tournamentRemoveMatch(Tournament tournament, Match match);
 
@@ -77,9 +75,8 @@ ChessResult tournamentRemoveMatch(Tournament tournament, Match match);
  * Tie breaker: lowest player ID wins.
  * 
  * @param tournament Tournament to end
- * @return  
- *     CHESS_NULL_ARGUMENT - provided argument was NULL
- *     CHESS_SUCCESS - Tournament was ended successfully.
+ * @return CHESS_NULL_ARGUMENT - provided argument was NULL;
+ *         CHESS_SUCCESS - Tournament was ended successfully.
  */
 ChessResult tournamentEnd(Tournament tournament);
 
@@ -91,10 +88,10 @@ ChessResult tournamentEnd(Tournament tournament);
  * @param list OUT pointer to a linked list of matches.
  *             NULL if return value != CHESS_SUCCESS
  *             caller's responsibility to free the list.
- * @return
- *    CHESS_NULL_ARGUMENT - provided argument was NULL
- *    CHESS_PLAYER_NOT_EXIST - player didn't play in the tournament
- *    CHESS_SUCCESS - list was compiled successfully.
+ * @return CHESS_NULL_ARGUMENT - provided argument was NULL; 
+ *         CHESS_OUT_OF_MEMORY - memory error occured; 
+ *         CHESS_PLAYER_NOT_EXIST - player didn't play in the tournament; 
+ *         CHESS_SUCCESS - list was compiled successfully.
  */
 ChessResult tournamentGetMatchesByPlayer(Tournament tournament, 
                                          int player_id, 
@@ -109,16 +106,15 @@ ChessResult tournamentGetMatchesByPlayer(Tournament tournament,
 void tournamentDestroy(Tournament tournament);
 
 /**
- * Compares two tournaments based on their ids, in increasing order. Assuming both tournaments are not NULL
+ * Compares two tournaments based on their ids, in increasing order. 
  * 
- * @param tournament1 first tournament to compare
- * @param tournament2 second tournament to compare
- * @return
- *    >0 if tournament1 > tournament2
- *    <0 if tournament1 < tournament2
- *    0 if both arguments has the same id
+ * @param tournament1 ID of first tournament to compare
+ * @param tournament2 ID of second tournament to compare
+ * @return >0 if tournament1 > tournament2; 
+ *         <0 if tournament1 < tournament2;   
+ *          0 if both arguments has the same id
  */
-int tournamentCompare(Tournament tournament1, Tournament tournament2);
+int tournamentCompare(MapKeyElement tournament1, MapKeyElement tournament2);
 
 /**
  * Allows for the user to check on the status of the tournament
@@ -130,13 +126,29 @@ int tournamentCompare(Tournament tournament1, Tournament tournament2);
 bool tournamentIsEnded(Tournament tournament);
 
 /**
+ * Checks if a player is a participant in the tournament
+ * 
+ * @param tournament Tournament to query
+ * @param player_id ID to check
+ * @return true player is a participant
+ * @return false player is not a participant
+ */
+bool tournamentIsParticipant(Tournament tournament, int player_id);
+
+/**
  * Creates a copy of the provided Tournament for the Map object.
  * 
- * @param original Tournament to be copied
- * @return 
- *    New exact copy of the provided Tournament
- *    NULL if memory allocation failed
+ * @param original_tournament Tournament to be copied
+ * @return New exact copy of the provided Tournament;
+ *         NULL if memory allocation failed
  */
-MapDataElement tournamentCopy(MapDataElement original);
+MapDataElement tournamentCopy(MapDataElement original_tournament);
+
+/**
+ * Wrapper for tournamentDestroy for GDT maps
+ * 
+ * @param tournament Tournament to be destroyed.
+ */
+void tournamentDestroyMap(MapDataElement tournament);
 
 #endif // _TOURNAMENT_H
