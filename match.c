@@ -1,187 +1,207 @@
-#include "tournament.h"
-#include "player.h"
 #include "match.h"
+#include "utils.h"
+#include <stdlib.h>
 
 struct match_t {
-  Player first;
-  Player second;
-  Player winner;
-  Tournament tournament;
+  int first;
+  int second;
+  int winner;
+  int tournament;
   int duration;
 };
 
-Match matchCreate(Player first_player, Player second_player, Player winner, Tournament tournament, int duration)
+/**
+ * checks if the players on both matches are the same
+ * @param match1 first match in question
+ * @param match2 second match in question
+ * @return true if players are the same, 
+ * false otherwie.
+ */
+static bool isSamePlayers(Match match1, Match match2);
+
+Match matchCreate(int first_player, 
+                  int second_player, 
+                  int winner, 
+                  int tournament, 
+                  int duration)
 {
-  if(first_player == NULL || second_player == NULL || tournament == NULL)
-  {
+  // arguments validation
+  if (!validateId(first_player) || 
+      !validateId(second_player) || 
+      !validateId(tournament) ||
+      duration < 0) {
     return NULL;
   }
-  if(duration == NULL || duration < 0)
-  {
+
+  // both players are the same player
+  if (first_player == second_player) {
     return NULL;
   }
-  if(playerGetId(first_player) == playerGetId(second_player)) //the two players are the same player
-  {
-    return NULL;
-  }
+
   Match match = (Match)malloc(sizeof(*match));
-  if(match == NULL)
-  {
-    return NULL;
-  }
+  RETURN_NULL_ON_NULL(match)
+
   match->first = first_player;
   match->second = second_player;
   match->winner = winner;
   match->tournament = tournament;
   match->duration = duration;
+
   return match;
 }
 
-Player matchGetFirst(Match match)
-{
-  if(match == NULL)
-  {
-    return NULL;
+#define RETURN_ZERO_ON_NULL(arg)  \
+  if (NULL == arg) {              \
+    return 0;                     \
   }
+
+int matchGetFirst(Match match)
+{
+  RETURN_ZERO_ON_NULL(match)
   return match->first;
 }
 
-Player matchGetSecond(Match match);
+int matchGetSecond(Match match)
 {
-  if(match == NULL)
-  {
-    return NULL;
-  }
+  RETURN_ZERO_ON_NULL(match)
   return match->second;
+}
 
-ChessResult matchSetWinner(Match match, Player winner)
+ChessResult matchSetWinner(Match match, int winner)
 {
-  if(match == NULL)
+  RETUN_RESULT_ON_NULL(match)
+
+  // match result was a draw
+  if(!winner) 
   {
-    return CHESS_NULL_ARGUMENT;
-  }
-  if(winner == NULL) //if it was a draw
-  {
-    match->winner = NULL;
+    match->winner = 0;
     return CHESS_SUCCESS;
   }
-  if(!matchIsParticipant(match, winner)) //if winner is not one of the players
-  {
+
+  // winner is not one of the players
+  if(!matchIsParticipant(match, winner)) {
     return CHESS_PLAYER_NOT_EXIST;
   }
-  if(winner == match->first)
-  {
+
+  if (winner != matchGetFirst(match)) {
     match->winner = match->first;
-  }
-  else
-  {
+  } else {
     match->winner = match->second;
   }
+
   return CHESS_SUCCESS;
 }
 
-ChessResult matchSetLoser(Match match, Player loser)
+ChessResult matchSetLoser(Match match, int loser)
 {
-  if(match == NULL)
-  {
-    return CHESS_NULL_ARGUMENT;
-  }
-  if(loser == NULL)
-  {
-    match->winner = NULL;
+  RETUN_RESULT_ON_NULL(match)
+  
+  // draw
+  if(!loser) {
+    match->winner = 0;
     return CHESS_SUCCESS;
   }
-  if(!matchIsParticipant(match, loser)) //if loser is not one of the players
-  {
+
+  // loser is not one of the players
+  if(!matchIsParticipant(match, loser)) {
     return CHESS_PLAYER_NOT_EXIST;
   }
-  if(match->first == loser)
-  {
+
+  if(loser == matchGetFirst(match)) { // second player won
     return matchSetWinner(match, match->second);
+  } else {
+    return matchSetWinner(match, match->first);
   }
-  return matchSetWinner(match, match->first);
 }
 
-bool matchIsParticipant(Match match, Player player)
+bool matchIsParticipant(Match match, int player)
 {
-  if(match == NULL || player == NULL)
-  {
+  if(NULL == match || !validateId(player)) {
     return false;
   }
-  if(player != match->first && player != match->second) //is not one of the players
-  {
+
+  // provided player is not a participant
+  if(player != matchGetFirst(match) && player != matchGetSecond(match)) {
     return false;
   }
+
   return true;
 }
 
-ChessResult matchGetWinner(Match match, Player *winner)
+ChessResult matchGetWinner(Match match, int *winner)
 {
-  if(match == NULL)
+  if(NULL == match)
   {
-    winner = NULL;
+    *winner = 0;
     return CHESS_NULL_ARGUMENT;
   }
-  winner = match->winner;
+
+  *winner = match->winner;
   return CHESS_SUCCESS;
 }
 
 int matchGetDuration(Match match)
 {
-  if(match == NULL)
-  {
+  if(NULL == match) {
     return -1;
   }
+
   return match->duration;
 }
 
-Tournament matchGetTournament(Match match)
+int matchGetTournament(Match match)
 {
-  if(match == NULL)
-  {
-    return NULL;
-  }
+  RETURN_ZERO_ON_NULL(match)
+
   return match->tournament;
 }
 
 void matchDestroy(Match match)
 {
-  if(match == NULL)
-  {
+  if(NULL == match) {
     return;
   }
-  tournamentRemoveMatch(match->tournament, match);
+
   free(match);
 }
 
-bool isSamePlayers(Match match1, Match match2)
+static bool isSamePlayers(Match match1, Match match2)
 {
-  if(match1 == NULL || match2==NULL)
-  {
+  if (NULL == match1 || NULL == match2) {
     return false;
   }
-  if(matchIsParticipant(match1, match2->first) && matchIsParticipant(match1, match2->second))
-  {
+
+  /*
+    If one of the participants of a match is 0 it means that one of the 
+    participants was removed from the system, so it's acceptable to have
+    two matches with the same player and 0 participant, thus both matches
+    don't have the same participants
+  */
+  if (matchIsParticipant(match1, 0) && matchIsParticipant(match1, 0)) {
+    return false;
+  }
+
+  // both participants are in both matches
+  if (matchIsParticipant(match1, match2->first) && 
+      matchIsParticipant(match1, match2->second)) {
     return true;
   }
-  return false;
 
+  return false;
 }
 
 int matchCompare(Match match1, Match match2)
 {
-  if(match1 == NULL || match2 == NULL)
-  {
-    return -1;
+  COMPARE_NOT_NULL(match1, match2)
+
+  // matches are not of the same tournament thus different
+  if (matchGetTournament(match1) != matchGetTournament(match2)) {
+    return 1;
   }
-  if(!isSamePlayers(match1, match2)) //if not the same players on both games
-  {
-    return -1;
-  }
-  if(match1->winner != match2->winner || match1->duration != match2->duration || 
-  match1->tournament != match2->tournament)
-  {
-    return -1;
+
+  // not the same players on both matches -> different matches 
+  if(!isSamePlayers(match1, match2)) {
+    return 1;
   }
 
   return 0;
@@ -189,19 +209,16 @@ int matchCompare(Match match1, Match match2)
 
 Match matchCopy(Match original)
 {
-  if(original == NULL)
-  {
-    return NULL;
-  }
+  RETURN_NULL_ON_NULL(original)
+
   Match match = (Match)malloc(sizeof(*match));
-  if(match == NULL)
-  {
-    return NULL;
-  }
+  RETURN_NULL_ON_NULL(match)
+
   match->first = original->first;
   match->second = original->second;
   match->winner = original->winner;
   match->duration = original->duration;
   match->tournament = original->tournament;
+  
   return match;
 }

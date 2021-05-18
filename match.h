@@ -3,86 +3,81 @@
 
 #include <stdbool.h>
 #include "chessSystem.h"
-#include "tournament.h"
-#include "player.h"
 
 typedef struct match_t *Match;
 
 /**
  * Creates new Match instance
  * 
- * @param first_player first participant
- * @param second_player second participant
- * @param winner The participant who won the match. Either first_player,
- *               second_player or NULL if match ended in a draw.
- * @param tournamet The tournament of which the match is a part of
+ * @param first_player first participant's ID
+ * @param second_player second participant's ID
+ * @param winner ID of participant who won the match. Either first_player,
+ *               second_player or 0 if match ended in a draw.
+ * @param tournament ID of tournament of which the match is a part of
  * @param duration duration of match, in seconds.
- * @return
- *    A new Match instance if all parameters are valid and all memory 
- *    allocation operation succeded.
- *    NULL otherwise.
+ * @return A new Match instance if all parameters are valid and all memory 
+ *         allocation operation succeded. NULL otherwise.
  */
-Match matchCreate(Player first_player, 
-                  Player second_player, 
-                  Player winner,
-                  Tournament tournament, 
+Match matchCreate(int first_player, 
+                  int second_player, 
+                  int winner,
+                  int tournament, 
                   int duration);
 
 
 /**
- *retrieves the first player of the match
+ * retrieves the ID of first player of the match
  * @param match Match in question
- * @return first player or NULL if recieves NULL arguments
+ * @return first player's ID or 0 if recieves NULL arguments
  */
-Player matchGetFirst(Match match);
+int matchGetFirst(Match match);
 
 /**
- *retrieves the second player of the match
+ * retrieves the ID of second player of the match
  * @param match Match in question
- * @return second player or NULL if recieves NULL arguments
+ * @return second player's ID or 0 if recieves NULL arguments
  */
-Player matchGetSecond(Match match);
+int matchGetSecond(Match match);
 
 /**
  * Sets the match winner.
  * 
  * @param match Match in question
- * @param winner winner of the match. May be NULL for draw, but must be
+ * @param winner ID winner of the match. May be 0 for draw, but must be
  *               one of the participants otherwise.
- * @return
- *     CHESS_NULL_ARGUMENT - provided match was NULL
- *     CHESS_PLAYER_NOT_EXIST - provided winner is not one of the participants.
- *     CHESS_SUCCESS - winner was set successfully.
+ * @return CHESS_NULL_ARGUMENT - provided match was NULL
+ * @return CHESS_PLAYER_NOT_EXIST - provided winner is not one of the participants.
+ * @return CHESS_SUCCESS - winner was set successfully.
  */
-ChessResult matchSetWinner(Match match, Player winner);
+ChessResult matchSetWinner(Match match, int winner);
 
 /**
- * Sets the match winner.
+ * Sets the match winner, thus the player that is not the loser.
  * 
  * @param match Match in question
- * @param loser loser of the match. May be NULL for draw, but must be
+ * @param loser ID loser of the match. May be NULL for draw, but must be
  *               one of the participants otherwise.
  * @return
  *     CHESS_NULL_ARGUMENT - provided match was NULL
  *     CHESS_PLAYER_NOT_EXIST - provided loser is not one of the participants.
  *     CHESS_SUCCESS - winner was set successfully.
  */
-ChessResult matchSetLoser(Match match, Player loser);
+ChessResult matchSetLoser(Match match, int loser);
 
 /**
  * Checks if the provided player is a participant in the match
  * 
  * @param match Match in question
- * @param player Player to check
+ * @param player ID to check
  * @return true - player is a participant in the match
  * @return false - player is not a participant in the match, or NULL parameters
  *         were provided
  */
-bool matchIsParticipant(Match match, Player player);
+bool matchIsParticipant(Match match, int player);
 
 /**
- * @brief Get the winner of the match.
- * winner will be NULL if result != CHESS_SUCCESS or match ended in a draw
+ * @brief Get the ID of the winner of the match.
+ * winner will be 0 if result != CHESS_SUCCESS or match ended in a draw
  * 
  * @param match Match in question
  * @param winner OUT for the found parameter
@@ -90,7 +85,7 @@ bool matchIsParticipant(Match match, Player player);
  *        CHESS_NULL_ARGUMENT - NULL parameter was provided
  *        CHESS_SUCCESS - winner was returned successfully.
  */
-ChessResult matchGetWinner(Match match, Player *winner);
+ChessResult matchGetWinner(Match match, int *winner);
 
 /**
  * Gets the duration of the match, in seconds.
@@ -110,21 +105,13 @@ int matchGetDuration(Match match);
 void matchDestroy(Match match);
 
 /**
- * Gets the tournament associated with the match
+ * Gets the ID of the tournament associated with the match
  * 
  * @param match Match is question
- * @return Tournament associated with the match
+ * @return Tournament ID associated with the match, 0 if NULL parameter was
+ *         passed
  */
-Tournament matchGetTournament(Match match);
-
-/**
- * checks if the players on both matches are the same
- * @param match1 first match in question
- * @param match2 second match in question
- * @return true if players are the same, 
- * false otherwie.
- */
-bool isSamePlayers(Match match1, Match match2);
+int matchGetTournament(Match match);
 
 /**
  * Compares Matches based on their tournament and participants.
