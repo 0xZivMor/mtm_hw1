@@ -28,6 +28,9 @@
     }                                   \
   }
 
+#define MATCHNODE_FOREACH(list) \
+      for(;list;matchNodeNext(list)) \
+
 /**
  * Ids are integers. Copies the key to a new integer.
  * 

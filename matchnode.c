@@ -21,10 +21,38 @@ matchNode matchNodeCreate(Match match, matchNode next)
   return new_match_node;
 }
 
+matchNode matchNodeAdd(matchNode previous, Match match)
+{
+  if(previous == NULL || match == NULL)
+  {
+    return NULL;
+  }
+  matchNode new_match_node = (matchNode) malloc(sizeof(*new_match_node));
+  RETURN_NULL_ON_NULL(new_match_node);
+
+  new_match_node->match = match;
+  previous->next = new_match_node;
+  return new_match_node;
+}
+
 matchNode matchNodeNext(matchNode node)
 {
   RETURN_NULL_ON_NULL(node)
   return node->next;
+}
+
+int matchNodeTotalTime(matchNode list)
+{
+  int total_time = 0;
+  matchNode node = list;
+  Match current;
+  while(node)
+  {
+    current = matchNodeGetMatch(node);
+    total_time += matchGetDuration(current);
+    node = matchNodeNext(node);
+  }
+  return total_time;
 }
 
 int matchNodeGetSize(matchNode list)
@@ -82,6 +110,18 @@ void matchNodeDestroy(matchNode node, bool destory_match)
   return;
 }
 
+void matchNodeDestroyList(matchNode head, bool destory_match)
+{
+  matchNode current = head;
+  matchNode toDestroy;
+  while(head != NULL)
+  {
+    toDestroy = current;
+    current = matchNodeNext(current);
+    matchNodeDestroy(toDestroy, destory_match);
+  }
+}
+
 void matchNodeConcat(matchNode dest, matchNode addition)
 {
   if (NULL == dest) {
@@ -113,3 +153,42 @@ void matchNodeRemoveTournamentFromList(matchNode list, int tournament_id, bool d
     }
   }
 }
+
+MapDataElement matchNodeCopy(MapDataElement original_list)
+{
+  matchNode original = (matchNode) original_list;
+  RETURN_NULL_ON_NULL(original)
+
+  matchNode new_list;
+  matchNode node = new_list;
+  //adding the first matchNode to new_list
+  Match current = matchNodeGetMatch(original);
+  Match toAdd = matchCopy(current);
+  new_list = matchNodeCreate(toAdd, NULL);
+  original = matchNodeNext(original);
+
+  //adding all other matchNodes from original
+  while(original != NULL)
+  {
+    current = matchNodeGetMatch(original);
+    toAdd = matchCopy(current);
+    node = matchNodeAdd(node, toAdd);
+    if(node == NULL)
+    {
+      matchNodeDestroy(new_list, true);
+    }
+    original = matchNodeNext(original);
+  }
+
+  return (MapDataElement) new_list;
+}
+
+void matchNodeDestroyMap(MapDataElement element)
+{
+  if(element == NULL)
+  {
+    return;
+  }
+  matchNodeDestroyList((matchNode)element, true);
+}
+

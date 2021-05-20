@@ -42,6 +42,23 @@ Tournament tournamentCreate(int id, const char *location, int max_games_per_play
 ChessResult tournamentAddMatch(Tournament tournament, Match match);
 
 /**
+ * returns the winner of the given tournament
+ * 
+ * @param tournament tournament in question
+ * @return the id of the winner, 0 if no winner yet
+ */ 
+int tournamentGetWinner(Tournament tournament);
+
+/**
+ * returns the location of the given tournament
+ * 
+ * @param tournament tournament in question
+ * @return the location of the tournament or
+ *   NULL if given null argument
+ */ 
+char* tournamentGetLocation(Tournament tournament);
+
+/**
  * Remove a player from a tournament. 
  * All matches the player participated in will be forfeited.
  * If player wasn't in the tournament, the function will be considered successful.
@@ -97,6 +114,7 @@ ChessResult tournamentGetMatchesByPlayer(Tournament tournament,
                                          int player_id, 
                                          matchNode *list);
 
+
 /**
  * Destroys a Tournament instance
  * Frees all private memory.
@@ -143,6 +161,40 @@ bool tournamentIsParticipant(Tournament tournament, int player_id);
  *         NULL if memory allocation failed
  */
 MapDataElement tournamentCopy(MapDataElement original_tournament);
+
+/**
+ * finds the longest match in the tournament.
+ * 
+ * @param tournament tournament in question
+ * @return the duration of the longest match
+ */ 
+int longestPlayTime(Tournament tournament);
+
+/**
+ * counts how many matches were in the tournament.
+ * 
+ * @param tournament tournament in question
+ * @return number of matches in the tournament
+ */
+int numberOfMatches(Tournament tournament);
+
+/**
+ * counts how many different players took part in the tournament.
+ * 
+ * @param tournament tournament in question
+ * @return
+ *      number of players in the tournament
+ */
+int numberOfPlayers(Tournament tournament);
+
+/**
+ * calculates the average game time in the tournament.
+ * 
+ * @param tournament tournament in question
+ * @return (sum of all durations) / (num of games),
+ *          0 if no games played
+ */
+double averagePlayTime(Tournament tournament);
 
 /**
  * Wrapper for tournamentDestroy for GDT maps

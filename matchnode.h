@@ -19,6 +19,18 @@ typedef struct match_node_t *matchNode;
 matchNode matchNodeCreate(Match match, matchNode next);
 
 /**
+ * Creates a new matchNode and adds it as the next node for the provided 
+ * previous node
+ * 
+ * @param match Match to be added to the list as next 
+ * @param previous matchNode to point to as previous. 
+ * @return 
+ *    NULL if match was NULL or memory failure occured
+ *    the new matchNode otherwise 
+ */
+matchNode matchNodeAdd(matchNode previous, Match match);
+
+/**
  * Gets the next node in the list
  * 
  * @param node current node
@@ -26,6 +38,15 @@ matchNode matchNodeCreate(Match match, matchNode next);
  *    next matchNode (may be NULL)
  */
 matchNode matchNodeNext(matchNode node);
+
+/**
+ * returns the total sum of all durations from all matches in the list. usefull for calculating statistics.
+ * 
+ * @param list the list in question
+ * @return
+ *    total sum of duration, 0 if list is empty / NULL
+ */
+int matchNodeTotalTime(matchNode list);
 
 /**
  * returns the size of the list from the given node untill reaching NULL
@@ -107,7 +128,7 @@ void matchNodeRemoveTournamentFromList(matchNode list, int tournament_id, bool d
  * @param original first matchNode in a list
  * @return MapDataElement 
  */
-MapDataElement matchNodeCopy(MapDataElement original);
+MapDataElement matchNodeCopy(MapDataElement original_list);
 
 /**
  * Destroy function for GDT map. Basically, a wrapper of 

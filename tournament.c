@@ -16,6 +16,11 @@ struct tournament_t {
 };
 
 /**
+ * returns true if toCheck is in array, false otherwise
+ */ 
+static bool IsInArray(int array[], int length, int toCheck);
+
+/**
  * Makes sure the both participants haven't reach the games limit in the 
  * tournament yet
  * 
@@ -119,6 +124,18 @@ ChessResult tournamentAddMatch(Tournament tournament, Match match)
     
   tournament->matches = new_node;
   return CHESS_SUCCESS;
+}
+
+int tournamentGetWinner(Tournament tournament)
+{
+    RETURN_NULL_ON_NULL(tournament);
+    return tournament->winner;
+}
+
+char* tournamentGetLocation(Tournament tournament)
+{
+    RETURN_NULL_ON_NULL(tournament);
+    return tournament->location;
 }
 
 ChessResult tournamentEnd(Tournament tournament)
@@ -233,6 +250,96 @@ MapDataElement tournamentCopy(MapDataElement original_tournament)
   return new_tournament;
 }
 
+int longestPlayTime(Tournament tournament)
+{
+  matchNode matches = tournament->matches;
+  int max = 0;
+  Match current;
+  MATCHNODE_FOREACH(matches)
+  {
+    current = matchNodeGetMatch(matches);
+    if(max < matchGetDuration(current))
+    {
+      max = matchGetDuration(current);
+    }
+  }
+  return max;
+}
+
+int numberOfMatches(Tournament tournament)
+{
+  if(tournament == NULL)
+  {
+    return 0;
+  }
+  return matchNodeGetSize(tournament->matches);
+}
+
+int numberOfPlayers(Tournament tournament)
+{
+  if(tournament == NULL)
+  {
+    return 0;
+  }
+  int num_of_players = 0;
+  matchNode matches = tournament->matches;
+  Match current;
+  int num_of_matches = matchNodeGetSize(matches);
+  //creating a temporary array with enough space, assuming all players played once 
+  int players[] = (int*) malloc(sizeof(int) * num_of_matches * 2);
+  for(int i=0; i< num_of_matches * 2; i++) //-1 everything to avoid errors
+  {
+    players[i] = -1;
+  }
+  int index_for_players = 0;
+  MATCHNODE_FOREACH(matches)
+  {
+    current = matchNodeGetMatch(matches);
+    int first = matchGetFirst(current);
+    int second = matchGetSecond(current);
+    if(!IsInArray(players, num_of_matches*2,first)) //if first is not in the array already
+    {
+      players[index_for_players] = first;
+      index_for_players++;
+    }
+    if(!IsInArray(players, num_of_matches*2, second)) //if second is not in the array already
+    {
+      players[index_for_players] = second;
+      index_for_players++;
+    }
+  }
+  free(players);
+  return index_for_players;
+}
+
+double averagePlayTime(Tournament tournament)
+{
+  if(tournament == NULL)
+  {
+    return 0.0;
+  }
+  double total_time = matchNodeTotalTime(tournament->matches);
+  double num_of_matches = matchNodeGetSize(tournament->matches);
+  if(num_of_matches == 0)
+  {
+    return 0.0;
+  }
+  return total_time / num_of_matches;
+}
+
+static bool IsInArray(int array[], int length, int toCheck)
+{
+  for(int i=0; i<length; i++)
+  {
+    if(array[i] == toCheck)
+    {
+      return true;
+    }
+  }
+  return false;
+}
+
+
 static ChessResult verifyGamesLimit(Tournament tournament,
                                     int player1,
                                     int player2)
@@ -301,3 +408,4 @@ static int calcPlayerScore(Tournament tournament, int player)
   matchNodeDestroyList(matches, false);
   return score;
 }
+

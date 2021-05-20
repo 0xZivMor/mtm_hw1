@@ -238,7 +238,7 @@ double chessCalculateAveragePlayTime(ChessSystem chess, int player_id, ChessResu
   }
 
   if (!validateId(player_id)) {
-    *chess_result = CHESS_PLAYER_NOT_EXIST;
+    *chess_result = CHESS_INVALID_ID;
     return 0.0;
   }
 
@@ -246,6 +246,74 @@ double chessCalculateAveragePlayTime(ChessSystem chess, int player_id, ChessResu
     *chess_result = CHESS_PLAYER_NOT_EXIST;
     return 0.0;                            
   }
+
+  matchNode matches_to_calculate;
+  Tournament current;
+  ChessResult result;
+  double total_time = 0;
+  double number_of_games = 0;
+
+  //going over all of the tournaments and taking matches played by player_id
+  MAP_FOREACH(Tournament, current, chess->matches)
+  {
+    result = tournamentGetMatchesByPlayer(current, player_id, &matches_to_calculate);
+    if(result == CHESS_SUCCESS)
+    {
+      //calculating number of games played and total time by player_id
+      number_of_games += matchNodeGetSize(matches_to_calculate);
+      total_time += matchNodeTotalTime(matches_to_calculate);
+    }
+  }
+  if(number_of_games == 0)
+  {
+    return 0.0;
+  }
+  return total_time / number_of_games; //the average play time
+}
+
+ChessResult chessSavePlayersLevels (ChessSystem chess, FILE* file)
+{
+
+
+}
+
+ChessResult chessSaveTournamentStatistics (ChessSystem chess, char* path_file)
+{
+  RETURN_NULL_ON_NULL(chess);
+
+  FILE *stats;
+  stats = fopen(path_file, "w");
+  Tournament current = mapGetFirst(chess->tournaments);
+  ChessResult result = CHESS_NO_TOURNAMENTS_ENDED;
+  int winner, longest_game, num_of_matches, num_of_players;
+  double average_game_time;
+  char* location;
+  while(current)
+  {
+    if(tournamentIsEnded(current)) // adding to stats only if tournament is over
+    {
+      #ifndef A_TOURNAMENT_ENDED //raising the flag 
+      #define A_A_TOURNAMENT_ENDED
+      #endif
+      winner = tournamentGetWinner(current);
+      longest_game = longestPlayTime(current);
+      num_of_matches = numberOfMatches(current);
+      num_of_players = numberOfPlayers(current);
+      location = tournamentGetLocation(current);
+      average_game_time = averagePlayTime(current);
+      //fprintf(stats, winner + "\n" + longest_game + "\n" + average_game_time + "\n" + location + "\n" + num_of_matches + "\n" +
+         // num_of_players + "\n\n");
+      
+    }
+    current = mapGetNext(current);
+  }
+  fclose(stats);
+  #ifndef A_TOURNAMENT_ENDED \ //if flag was never raised
+  return CHESS_NO_TOURNAMENTS_ENDED; 
+  #endif
+  return CHESS_SUCCESS;
+
+  
 }
 
 static int getWinner(int first_player, int second_player, Winner winner)
