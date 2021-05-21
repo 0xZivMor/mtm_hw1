@@ -250,24 +250,33 @@ double chessCalculateAveragePlayTime(ChessSystem chess, int player_id, ChessResu
   matchNode matches_to_calculate;
   Tournament current;
   ChessResult result;
-  double total_time = 0;
-  double number_of_games = 0;
+  double total_time = 0, number_of_games = 0;
 
-  //going over all of the tournaments and taking matches played by player_id
+  // going over all of the tournaments and taking matches played by player_id
   MAP_FOREACH(Tournament, current, chess->matches)
   {
     result = tournamentGetMatchesByPlayer(current, player_id, &matches_to_calculate);
-    if(result == CHESS_SUCCESS)
-    {
-      //calculating number of games played and total time by player_id
-      number_of_games += matchNodeGetSize(matches_to_calculate);
-      total_time += matchNodeTotalTime(matches_to_calculate);
+    freeInt(current); // free the key copy
+    
+    switch (result) {
+      case CHESS_SUCCESS:
+        //calculating number of games played and total time by player_id
+        number_of_games += matchNodeGetSize(matches_to_calculate);
+        total_time += matchNodeTotalTime(matches_to_calculate);
+        break;
+      case CHESS_OUT_OF_MEMORY:
+        // all resources are free, report error and exit
+        *chess_result = CHESS_OUT_OF_MEMORY;
+        return 0.0;
+      default:
+        continue;
     }
   }
-  if(number_of_games == 0)
-  {
+  
+  if(!number_of_games) {
     return 0.0;
   }
+
   return total_time / number_of_games; //the average play time
 }
 
@@ -288,6 +297,7 @@ ChessResult chessSaveTournamentStatistics (ChessSystem chess, char* path_file)
   int winner, longest_game, num_of_matches, num_of_players;
   double average_game_time;
   char* location;
+  
   while(current)
   {
     if(tournamentIsEnded(current)) // adding to stats only if tournament is over
