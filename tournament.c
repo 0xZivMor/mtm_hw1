@@ -18,7 +18,7 @@ struct tournament_t {
 /**
  * returns true if toCheck is in array, false otherwise
  */ 
-static bool IsInArray(int array[], int length, int toCheck);
+static bool isInArray(int array[], int length, int toCheck);
 
 /**
  * Makes sure the both participants haven't reach the games limit in the 
@@ -140,7 +140,7 @@ char* tournamentGetLocation(Tournament tournament)
 
 ChessResult tournamentEnd(Tournament tournament)
 {
-  RETUN_RESULT_ON_NULL(tournament)
+  RETURN_RESULT_ON_NULL(tournament)
 
   int *current_player_id, max_score = -1, *current_score;
 
@@ -169,7 +169,7 @@ ChessResult tournamentGetMatchesByPlayer(Tournament tournament,
                                          int player_id, 
                                          matchNode *list)
 {
-  RETUN_RESULT_ON_NULL(tournament)
+  RETURN_RESULT_ON_NULL(tournament)
 
   if (!tournamentIsParticipant(tournament, player_id)) {
     *list = NULL;
@@ -250,59 +250,62 @@ MapDataElement tournamentCopy(MapDataElement original_tournament)
   return new_tournament;
 }
 
-int longestPlayTime(Tournament tournament)
+#define RETURN_ZERO_ON_NULL(arg)  \
+  if(arg == NULL) {               \
+    return 0;                     \
+  }
+
+int tournamentLongestPlayTime(Tournament tournament)
 {
+  RETURN_ZERO_ON_NULL(tournament)
   matchNode matches = tournament->matches;
-  int max = 0;
   Match current;
-  MATCHNODE_FOREACH(matches)
-  {
+  int max = 0;
+
+  MATCHNODE_FOREACH(matches) {
     current = matchNodeGetMatch(matches);
-    if(max < matchGetDuration(current))
-    {
+    if(max < matchGetDuration(current)) {
       max = matchGetDuration(current);
     }
   }
   return max;
 }
 
-int numberOfMatches(Tournament tournament)
+int tournamnetNumberOfMatches(Tournament tournament)
 {
-  if(tournament == NULL)
-  {
-    return 0;
-  }
+  RETURN_ZERO_ON_NULL(tournament)
+
   return matchNodeGetSize(tournament->matches);
 }
 
-int numberOfPlayers(Tournament tournament)
+int tournamentNumberOfPlayers(Tournament tournament)
 {
-  if(tournament == NULL)
-  {
-    return 0;
-  }
-  int num_of_players = 0;
+  RETURN_ZERO_ON_NULL(tournament)
+
   matchNode matches = tournament->matches;
   Match current;
-  int num_of_matches = matchNodeGetSize(matches);
+  int num_of_players = 0, num_of_matches = matchNodeGetSize(matches);
+  
   //creating a temporary array with enough space, assuming all players played once 
   int players[] = (int*) malloc(sizeof(int) * num_of_matches * 2);
-  for(int i=0; i< num_of_matches * 2; i++) //-1 everything to avoid errors
-  {
+  
+  // initialize array to -1 to avoid errors
+  for(int i = 0; i < num_of_matches * 2; i++) {
     players[i] = -1;
   }
+
   int index_for_players = 0;
-  MATCHNODE_FOREACH(matches)
-  {
+  
+  MATCHNODE_FOREACH(matches) {
     current = matchNodeGetMatch(matches);
     int first = matchGetFirst(current);
     int second = matchGetSecond(current);
-    if(!IsInArray(players, num_of_matches*2,first)) //if first is not in the array already
+    if(!isInArray(players, num_of_matches*2,first)) //if first is not in the array already
     {
       players[index_for_players] = first;
       index_for_players++;
     }
-    if(!IsInArray(players, num_of_matches*2, second)) //if second is not in the array already
+    if(!isInArray(players, num_of_matches*2, second)) //if second is not in the array already
     {
       players[index_for_players] = second;
       index_for_players++;
@@ -312,33 +315,30 @@ int numberOfPlayers(Tournament tournament)
   return index_for_players;
 }
 
-double averagePlayTime(Tournament tournament)
+double tournamentAveragePlayTime(Tournament tournament)
 {
-  if(tournament == NULL)
-  {
+  if(NULL == tournament) {
     return 0.0;
   }
+
   double total_time = matchNodeTotalTime(tournament->matches);
   double num_of_matches = matchNodeGetSize(tournament->matches);
-  if(num_of_matches == 0)
-  {
+  
+  if(!num_of_matches) {
     return 0.0;
   }
   return total_time / num_of_matches;
 }
 
-static bool IsInArray(int array[], int length, int toCheck)
+static bool isInArray(int array[], int length, int toCheck)
 {
-  for(int i=0; i<length; i++)
-  {
-    if(array[i] == toCheck)
-    {
+  for(int i = 0; i < length; i++) {
+    if(array[i] == toCheck) {
       return true;
     }
   }
   return false;
 }
-
 
 static ChessResult verifyGamesLimit(Tournament tournament,
                                     int player1,

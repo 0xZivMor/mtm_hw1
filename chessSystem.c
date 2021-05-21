@@ -144,7 +144,7 @@ ChessResult chessAddTournament(ChessSystem chess,
 ChessResult chessAddGame(ChessSystem chess, int tournament_id, int first_player,
                          int second_player, Winner winner, int play_time)
 {
-  RETUN_RESULT_ON_NULL(chess)
+  RETURN_RESULT_ON_NULL(chess)
 
   if (!validateId(tournament_id) || 
       !validateId(first_player) || 
@@ -180,7 +180,7 @@ ChessResult chessAddGame(ChessSystem chess, int tournament_id, int first_player,
 
 ChessResult chessRemoveTournament(ChessSystem chess, int tournament_id)
 {
-  RETUN_RESULT_ON_NULL(chess)
+  RETURN_RESULT_ON_NULL(chess)
   VALIDATE_ID(tournament_id)
 
   Tournament tournament;
@@ -194,7 +194,7 @@ ChessResult chessRemoveTournament(ChessSystem chess, int tournament_id)
 
 ChessResult chessRemovePlayer(ChessSystem chess, int player_id)
 {
-  RETUN_RESULT_ON_NULL(chess)
+  RETURN_RESULT_ON_NULL(chess)
   VALIDATE_ID(player_id)
 
   if (!mapContains(chess->players, (MapKeyElement)&player_id)) {
@@ -218,7 +218,7 @@ ChessResult chessRemovePlayer(ChessSystem chess, int player_id)
 
 ChessResult chessEndTournament(ChessSystem chess, int tournament_id)
 {
-  RETUN_RESULT_ON_NULL(chess)
+  RETURN_RESULT_ON_NULL(chess)
   VALIDATE_ID(tournament_id)
 
   Tournament tournament;
@@ -288,7 +288,7 @@ ChessResult chessSavePlayersLevels (ChessSystem chess, FILE* file)
 
 ChessResult chessSaveTournamentStatistics (ChessSystem chess, char* path_file)
 {
-  RETURN_NULL_ON_NULL(chess);
+  RETURN_RESULT_ON_NULL(chess);
 
   FILE *stats;
   stats = fopen(path_file, "w");

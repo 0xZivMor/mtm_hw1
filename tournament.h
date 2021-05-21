@@ -168,7 +168,7 @@ MapDataElement tournamentCopy(MapDataElement original_tournament);
  * @param tournament tournament in question
  * @return the duration of the longest match
  */ 
-int longestPlayTime(Tournament tournament);
+int tournamentLongestPlayTime(Tournament tournament);
 
 /**
  * counts how many matches were in the tournament.
@@ -176,7 +176,7 @@ int longestPlayTime(Tournament tournament);
  * @param tournament tournament in question
  * @return number of matches in the tournament
  */
-int numberOfMatches(Tournament tournament);
+int tournamnetNumberOfMatches(Tournament tournament);
 
 /**
  * counts how many different players took part in the tournament.
@@ -185,7 +185,7 @@ int numberOfMatches(Tournament tournament);
  * @return
  *      number of players in the tournament
  */
-int numberOfPlayers(Tournament tournament);
+int tournamentNumberOfPlayers(Tournament tournament);
 
 /**
  * calculates the average game time in the tournament.
@@ -194,7 +194,7 @@ int numberOfPlayers(Tournament tournament);
  * @return (sum of all durations) / (num of games),
  *          0 if no games played
  */
-double averagePlayTime(Tournament tournament);
+double TournamentAveragePlayTime(Tournament tournament);
 
 /**
  * Wrapper for tournamentDestroy for GDT maps

@@ -8,7 +8,7 @@
     return NULL;                  \
   }
 
-#define RETUN_RESULT_ON_NULL(arg) \
+#define RETURN_RESULT_ON_NULL(arg) \
   if (NULL == arg) {              \
     return CHESS_NULL_ARGUMENT;   \
   }
