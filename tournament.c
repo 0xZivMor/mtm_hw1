@@ -141,6 +141,10 @@ char* tournamentGetLocation(Tournament tournament)
 ChessResult tournamentEnd(Tournament tournament)
 {
   RETURN_RESULT_ON_NULL(tournament)
+  
+  if (!tournamentNumberOfMatches(tournament)) {
+    return CHESS_NO_GAMES;
+  }
 
   int *current_player_id, max_score = -1, *current_score;
 

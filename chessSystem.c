@@ -47,6 +47,16 @@ static void chessRemoveMatchesByTournament(ChessSystem chess, int tournament);
  */
 static ChessResult addMatch(ChessSystem chess, Tournament tournament, Match match);
 
+/**
+ * Calculates player's level in the system.
+ *
+ * 
+ * @param player_id player whose level is to be calculated
+ * @param matches List of player's matches
+ * @return player's level
+ */
+static double clacLevel(int player_id, matchNode matches);
+
 ChessSystem chessCreate()
 {
   ChessSystem chess = (ChessSystem)malloc(sizeof(*chess));
@@ -280,10 +290,36 @@ double chessCalculateAveragePlayTime(ChessSystem chess, int player_id, ChessResu
   return total_time / number_of_games; //the average play time
 }
 
-ChessResult chessSavePlayersLevels (ChessSystem chess, FILE* file)
+ChessResult chessSavePlayersLevels(ChessSystem chess, FILE* file)
 {
+  if (NULL == chess || NULL == file) {
+    return CHESS_NULL_ARGUMENT;
+  }
 
+  int *player_id, result;
+  matchNode matches;
 
+  MAP_FOREACH(int *, player_id, chess->players) {
+    matches = (matchNode)mapGet(chess->players, (MapKeyElement)player_id);
+
+    // player hadn't played any matches, don't write
+    if (NULL == matches) {
+      freeInt(player_id);
+      continue;
+    }
+
+    result = fprintf(file, "%d %f\n", *player_id, calcLevel(*player_id, matches));
+    if (result < 0) {
+      freeInt(player_id);
+      fclose(file);
+      return CHESS_SAVE_FAILURE;
+    }
+
+    freeInt(player_id);
+  }
+
+  fclose(file);
+  return CHESS_SUCCESS;
 }
 
 ChessResult chessSaveTournamentStatistics(ChessSystem chess, char* path_file)
@@ -303,7 +339,7 @@ ChessResult chessSaveTournamentStatistics(ChessSystem chess, char* path_file)
   
   Tournament current;
   MAP_FOREACH(int *, tournament_id, chess->tournaments) {
-    current = mapGet(chess->tournaments, tournament_id);
+    current = (Tournament)mapGet(chess->tournaments, (MapKeyElement)tournament_id);
     freeInt(tournament_id);
 
     // adding to stats only if tournament is over
@@ -312,13 +348,13 @@ ChessResult chessSaveTournamentStatistics(ChessSystem chess, char* path_file)
     }
 
     no_tourmanet_ended = false;
-      winner = tournamentGetWinner(current);
+    winner = tournamentGetWinner(current);
     longest_game = tournamentLongestPlayTime(current);
     num_of_matches = tournamentNumberOfMatches(current);
     num_of_players = TouranmentNumberOfPlayers(current);
-      location = tournamentGetLocation(current);
+    location = tournamentGetLocation(current);
     average_game_time = tournamentAveragePlayTime(current);
-      
+
     result = fprintf(stats_file, 
                      "%d\n%d\n%f\n%s\n%d\n%d\n\n",
                      winner, longest_game, average_game_time, location,
@@ -331,7 +367,7 @@ ChessResult chessSaveTournamentStatistics(ChessSystem chess, char* path_file)
 
   fclose(stats_file);
   if (!no_tourmanet_ended) {
-  return CHESS_NO_TOURNAMENTS_ENDED; 
+    return CHESS_NO_TOURNAMENTS_ENDED;
   }
 
   return CHESS_SUCCESS;
@@ -392,4 +428,26 @@ static ChessResult addMatch(ChessSystem chess, Tournament tournament, Match matc
   
   chess->matches = matches_node;
   return CHESS_SUCCESS;
+}
+
+static double clacLevel(int player_id, matchNode matches) {
+  
+  double score = 0;
+  int winner, number_of_games = matchNodeGetSize(matches);
+  Match match;
+
+  MATCHNODE_FOREACH(matches) {
+    match = matchNodeGetMatch(matches);
+    winner = matchGetWinner(match, &winner);
+
+    if (winner == player_id) {
+      score += 6;
+    } else if (winner == 0) { // draw
+      score += 2;
+    } else {  // player lost
+      score -= 10;
+    }
+  }
+
+  return score / (double)number_of_games; 
 }
