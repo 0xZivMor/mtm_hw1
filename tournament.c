@@ -181,7 +181,6 @@ ChessResult tournamentGetMatchesByPlayer(Tournament tournament,
   }
 
   // if a player exists in a tournament, it must participate in atleast one match
-
   matchNode matches = tournament->matches, new_node = NULL;
   
   FOREACH_MATCH(matches) {
@@ -213,7 +212,7 @@ void tournamentDestroy(Tournament tournament)
 
 void tournamentDestroyMap(MapDataElement tournament)
 {
-  tournamentDestory((Tournament)tournament);
+  tournamentDestroy((Tournament)tournament);
 }
 
 int tournamentCompare(MapKeyElement tournament1, MapKeyElement tournament2)

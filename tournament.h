@@ -176,7 +176,7 @@ int tournamentLongestPlayTime(Tournament tournament);
  * @param tournament tournament in question
  * @return number of matches in the tournament
  */
-int tournamnetNumberOfMatches(Tournament tournament);
+int tournamentNumberOfMatches(Tournament tournament);
 
 /**
  * counts how many different players took part in the tournament.
@@ -194,7 +194,7 @@ int tournamentNumberOfPlayers(Tournament tournament);
  * @return (sum of all durations) / (num of games),
  *          0 if no games played
  */
-double TournamentAveragePlayTime(Tournament tournament);
+double tournamentAveragePlayTime(Tournament tournament);
 
 /**
  * Wrapper for tournamentDestroy for GDT maps

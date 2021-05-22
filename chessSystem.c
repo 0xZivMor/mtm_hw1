@@ -55,7 +55,7 @@ static ChessResult addMatch(ChessSystem chess, Tournament tournament, Match matc
  * @param matches List of player's matches
  * @return player's level
  */
-static double clacLevel(int player_id, matchNode matches);
+static double calcLevel(int player_id, matchNode matches);
 
 ChessSystem chessCreate()
 {
@@ -242,6 +242,7 @@ double chessCalculateAveragePlayTime(ChessSystem chess, int player_id, ChessResu
   if (NULL == chess_result) {
     return 0.0;
   }
+
   if (NULL == chess) {
     *chess_result = CHESS_NULL_ARGUMENT;
     return 0.0;
@@ -351,7 +352,7 @@ ChessResult chessSaveTournamentStatistics(ChessSystem chess, char* path_file)
     winner = tournamentGetWinner(current);
     longest_game = tournamentLongestPlayTime(current);
     num_of_matches = tournamentNumberOfMatches(current);
-    num_of_players = TouranmentNumberOfPlayers(current);
+    num_of_players = tournamentNumberOfPlayers(current);
     location = tournamentGetLocation(current);
     average_game_time = tournamentAveragePlayTime(current);
 
@@ -430,7 +431,7 @@ static ChessResult addMatch(ChessSystem chess, Tournament tournament, Match matc
   return CHESS_SUCCESS;
 }
 
-static double clacLevel(int player_id, matchNode matches) {
+static double calcLevel(int player_id, matchNode matches) {
   
   double score = 0;
   int winner, number_of_games = matchNodeGetSize(matches);

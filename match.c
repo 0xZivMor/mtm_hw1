@@ -69,7 +69,7 @@ int matchGetSecond(Match match)
 
 ChessResult matchSetWinner(Match match, int winner)
 {
-  RETUN_RESULT_ON_NULL(match)
+  RETURN_RESULT_ON_NULL(match)
 
   // match result was a draw
   if(!winner) 
@@ -94,7 +94,7 @@ ChessResult matchSetWinner(Match match, int winner)
 
 ChessResult matchSetLoser(Match match, int loser)
 {
-  RETUN_RESULT_ON_NULL(match)
+  RETURN_RESULT_ON_NULL(match)
   
   // draw
   if(!loser) {
