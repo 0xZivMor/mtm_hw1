@@ -147,9 +147,17 @@ ChessResult chessAddTournament(ChessSystem chess,
     return CHESS_OUT_OF_MEMORY;
   }
 
+  Tournament copy = (Tournament)mapGet(chess->tournaments, (MapKeyElement)&tournament_id);
+  tournamentDestroy(tournament);
   return CHESS_SUCCESS;
 }
 
+#define ADD_PLAYER_IF_NEW(chess, player)                        \
+   if (!mapContains(chess->players, (MapKeyElement)&player)) {  \
+    IF_MAP_PUT(chess->players, &player, NULL) {                 \
+      return CHESS_OUT_OF_MEMORY;                               \
+    }                                                           \
+  }
 ChessResult chessAddGame(ChessSystem chess, int tournament_id, int first_player,
                          int second_player, Winner winner, int play_time)
 {
@@ -170,8 +178,9 @@ ChessResult chessAddGame(ChessSystem chess, int tournament_id, int first_player,
   Tournament tournament;
   GET_TOURNAMENT(tournament_id, tournament)
 
-  // if a player was created "without need" and will be never used again,
-  // it will be freed when the chess instance is destroyed.
+  // players seen for the first time
+  ADD_PLAYER_IF_NEW(chess, first_player)
+  ADD_PLAYER_IF_NEW(chess, second_player)
   
   ChessId player_winner = getWinner(first_player, second_player, winner);
   Match match = matchCreate(first_player, 
@@ -195,7 +204,6 @@ ChessResult chessRemoveTournament(ChessSystem chess, int tournament_id)
   Tournament tournament;
   GET_TOURNAMENT(tournament_id, tournament)
 
-  tournamentDestroy(tournament);
   chessRemoveMatchesByTournament(chess, tournament_id);
   mapRemove(chess->tournaments, (MapKeyElement) &tournament_id);
   return CHESS_SUCCESS;

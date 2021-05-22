@@ -114,7 +114,7 @@ void matchNodeDestroyList(matchNode head, bool destory_match)
 {
   matchNode current = head;
   matchNode toDestroy;
-  while(head != NULL)
+  while(current != NULL)
   {
     toDestroy = current;
     current = matchNodeNext(current);
@@ -169,14 +169,12 @@ MapDataElement matchNodeCopy(MapDataElement original_list)
   original = matchNodeNext(original);
 
   //adding all other matchNodes from original
-  while(original != NULL)
-  {
+  while(NULL != original) {
     current = matchNodeGetMatch(original);
     toAdd = matchCopy(current);
     node = matchNodeAdd(node, toAdd);
-    if(node == NULL)
-    {
-      matchNodeDestroy(new_list, true);
+    if(NULL == node) {
+      matchNodeDestroy(new_list, false);
     }
     original = matchNodeNext(original);
   }
@@ -191,5 +189,17 @@ void matchNodeDestroyMap(MapDataElement element)
     return;
   }
   matchNodeDestroyList((matchNode)element, true);
+}
+
+bool matchNodeInList(matchNode head, Match match)
+{
+  FOREACH_MATCH(head) {
+    Match current = matchNodeGetMatch(head);
+
+    if (!matchCompare(match, current)) {
+      return true;
+    }
+  }
+  return false;
 }
 

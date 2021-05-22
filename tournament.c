@@ -287,8 +287,15 @@ MapDataElement tournamentCopy(MapDataElement original_tournament)
 
   new_tournament->finished = original->finished;
   new_tournament->winner = original->winner;
-  new_tournament->matches = original->matches;
-  new_tournament->scores = original->scores;
+
+  // no need to copy matches if there aren't any
+  if (NULL != original->matches) {
+    new_tournament->matches = (matchNode)matchNodeCopy(original->matches);
+  }
+
+  // destroy new map and copy old
+  mapDestroy(new_tournament->scores);
+  new_tournament->scores = mapCopy(original->scores);
   
   return new_tournament;
 }
@@ -308,7 +315,7 @@ int tournamentLongestPlayTime(Tournament tournament)
   return max;
 }
 
-int tournamnetNumberOfMatches(Tournament tournament)
+int tournamentNumberOfMatches(Tournament tournament)
 {
   RETURN_ZERO_ON_NULL(tournament)
 
