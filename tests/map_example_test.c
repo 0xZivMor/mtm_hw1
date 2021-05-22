@@ -1,6 +1,6 @@
-#include "test_utilities.h"
+#include "../test_utilities.h"
 #include <stdlib.h>
-#include "map.h"
+#include "../mtm_map/map.h"
 
 #define NUMBER_TESTS 4
 
@@ -117,6 +117,7 @@ bool testIterator() {
     int i = 1;
     MAP_FOREACH(int *, iter, map) {
       ASSERT_TEST(*iter == i);
+      freeInt(iter);
       i++;
     }
 
