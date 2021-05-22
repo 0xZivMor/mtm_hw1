@@ -84,6 +84,7 @@ ChessSystem chessCreate()
   }
 
   chess->matches = NULL;
+  return chess;
 }
 
 #define VALIDATE_ID(arg)      \
@@ -194,8 +195,8 @@ ChessResult chessRemoveTournament(ChessSystem chess, int tournament_id)
   Tournament tournament;
   GET_TOURNAMENT(tournament_id, tournament)
 
-  chessRemoveMatchesByTournament(chess, tournament);
   tournamentDestroy(tournament);
+  chessRemoveMatchesByTournament(chess, tournament_id);
   mapRemove(chess->tournaments, (MapKeyElement) &tournament_id);
   return CHESS_SUCCESS;
 }
@@ -262,7 +263,7 @@ double chessCalculateAveragePlayTime(ChessSystem chess, int player_id, ChessResu
   double total_time = 0, number_of_games = 0;
 
   // going over all of the tournaments and taking matches played by player_id
-  MAP_FOREACH(Tournament, current, chess->matches)
+  MAP_FOREACH(Tournament, current, chess->tournaments)
   {
     result = tournamentGetMatchesByPlayer(current, player_id, &matches_to_calculate);
     freeInt(current); // free the key copy
@@ -445,4 +446,19 @@ static double calcLevel(int player_id, matchNode matches) {
   }
 
   return score / (double)number_of_games; 
+}
+
+static void chessRemoveMatchesByTournament(ChessSystem chess, int tournament) {
+
+  matchNode node = chess->matches;
+  Match match;
+
+  // iterating manually because the list is changed
+  while (NULL != node) {
+    match = matchNodeGetMatch(node);
+    node = matchNodeNext(node);
+
+    matchNodeRemove(chess->matches, match);  // remove the match from the matches list
+    matchDestroy(match); // this is the only place where we destroy matches
+  }
 }

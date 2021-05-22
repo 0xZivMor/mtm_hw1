@@ -37,18 +37,29 @@ static ChessResult verifyGamesLimit(Tournament tournament,
                                     int player2);
 
 /**
- * Calculates the player's score in the tournament according to the following
- * key:
- *    win: +2 points
- *    draw: +1 point
- *    loss: no change
+ * Adds a match's participants to the tournament if they aren't participating
+ * already.
  * 
- * @param tournament Tournament in question
- * @param player ID of player in question
- * @return >=0 player's score; 
- *         <0 on memory error
+ * @param tournament Tournament to add to
+ * @param player1 ID of the first player
+ * @param player2 ID of the second player
+ * @return CHESS_OUT_OF_MEMORY memory error occured; 
+ *         CHESS_SUCCESS operation succeded.
  */
-static int calcPlayerScore(Tournament tournament, int player);
+static ChessResult addPlayersIfNotParticipants(Tournament tournament, 
+                                               int player1, 
+                                               int player2);
+
+/**
+ * Updates a match participants scores in the tournament's scores map.
+ * This private function assumes the match was validated.
+ * 
+ * @param tournament tournament in which the match took place
+ * @param match validated match.
+ * @return CHESS_OUT_OF_MEMORY memory error occured; 
+ *         CHESS_SUCCESS players scores were updated successfully
+ */
+static ChessResult updatePlayersScores(Tournament tournament, Match match);
 
 Tournament tournamentCreate(int id, const char *location, int max_games_per_player)
 {
@@ -84,7 +95,9 @@ Tournament tournamentCreate(int id, const char *location, int max_games_per_play
   tournament->location = new_loc;
   tournament->max_matches_per_player = max_games_per_player;
   tournament->finished = false;
-  tournament->winner = NULL;
+  tournament->winner = 0;
+
+  return tournament;
 }
 
 ChessResult tournamentAddMatch(Tournament tournament, Match match)
@@ -103,9 +116,10 @@ ChessResult tournamentAddMatch(Tournament tournament, Match match)
   }
 
   int player1 = matchGetFirst(match), player2 = matchGetSecond(match);
-  if (!tournamentIsParticipant(tournament, player1) ||
-      !tournamentIsParticipant(tournament, player2)) {
-    return CHESS_PLAYER_NOT_EXIST;
+  if (CHESS_OUT_OF_MEMORY == addPlayersIfNotParticipants(tournament, 
+                                                         player1, 
+                                                         player2)) {
+    return CHESS_OUT_OF_MEMORY;
   }
 
   switch (verifyGamesLimit(tournament, player1, player2)) {
@@ -120,7 +134,12 @@ ChessResult tournamentAddMatch(Tournament tournament, Match match)
   matchNode new_node = matchNodeCreate(match, tournament->matches); 
   if (NULL == new_node) {
     return CHESS_OUT_OF_MEMORY;
-  } 
+  }
+
+  if (CHESS_OUT_OF_MEMORY == updatePlayersScores(tournament, match)) {
+    matchNodeDestroy(new_node, false);
+    return CHESS_OUT_OF_MEMORY;
+  }
     
   tournament->matches = new_node;
   return CHESS_SUCCESS;
@@ -159,10 +178,10 @@ ChessResult tournamentEnd(Tournament tournament)
     current_score = MAP_GET(tournament->scores, current_player_id, int *);
 
     // replace winner if we got a better result
-    if (current_score > max_score) {
-      max_score = current_score;
+    if (*current_score > max_score) {
+      max_score = *current_score;
       tournament->winner = *current_player_id;
-    } else if (current_score == max_score) {
+    } else if (*current_score == max_score) {
       // choose the one with lower id
       if (tournament->winner > *current_player_id) {
         tournament->winner = *current_player_id;
@@ -291,7 +310,7 @@ int tournamentNumberOfPlayers(Tournament tournament)
   int num_of_players = 0, num_of_matches = matchNodeGetSize(matches);
   
   //creating a temporary array with enough space, assuming all players played once 
-  int players[] = (int*) malloc(sizeof(int) * num_of_matches * 2);
+  int *players = (int *)malloc(sizeof(int) * num_of_matches * 2);
   
   // initialize array to -1 to avoid errors
   for(int i = 0; i < num_of_matches * 2; i++) {
@@ -383,33 +402,63 @@ static ChessResult verifyGamesLimit(Tournament tournament,
   return result;
 }
 
-static int calcPlayerScore(Tournament tournament, int player)
+static ChessResult updatePlayersScores(Tournament tournament, Match match)
 {
-  matchNode matches;
-  if (CHESS_OUT_OF_MEMORY == tournamentGetMatchesByPlayer(tournament, 
-                                                          player, 
-                                                          &matches)) {
-    return -1;
-  }
+  int player1_id = matchGetFirst(match), player2_id = matchGetSecond(match);
+  int player1_score = *(MAP_GET(tournament->scores, &player1_id, int *));
+  int player2_score = *(MAP_GET(tournament->scores, &player2_id, int *));
   
-  matchNode current = matches;
-  int winner_id;
-  int score = 0;
+  int winner; 
+  matchGetWinner(match, &winner);
 
-  FOREACH_MATCH(current) {
-    if (CHESS_SUCCESS == matchGetWinner(matchNodeGetMatch(current), &winner_id)) {
-      // draw
-      if (!winner_id) {
-        score += 1;
+  if (!winner) {  // draw
+    player1_score++;
+    player2_score++;
+  } else if (winner == player1_id) {
+    player1_score += 2;
+  } else {
+    player2_score += 2;
+  }
 
-      // player won the match
-      } else if (player == winner_id) {
-        score += 2;
+  IF_MAP_PUT(tournament->scores, &player1_id, &player1_score) {
+    return CHESS_OUT_OF_MEMORY;
+  }
+
+  /**
+   * if memory error occures here, we can't undo the change to player1's
+   * score because we're already out of memory
+   */
+  IF_MAP_PUT(tournament->scores, &player2_id, &player2_score) {
+    return CHESS_OUT_OF_MEMORY;
+  }
+
+  return CHESS_SUCCESS;
+}
+
+static ChessResult addPlayersIfNotParticipants(Tournament tournament, 
+                                               int player1, 
+                                               int player2)
+{
+  bool player1_added = false;
+  int zero = 0;
+
+  if (!tournamentIsParticipant(tournament, player1)) {
+    IF_MAP_PUT(tournament->scores, &player1, &zero) {
+      return CHESS_OUT_OF_MEMORY;
+    }
+    player1_added = true;
+  }
+
+  if (!tournamentIsParticipant(tournament, player1)) {
+    IF_MAP_PUT(tournament->scores, &player2, &zero) {
+      // player1 was added to the tournament on this call, remove it
+      if (player1_added) {
+        mapRemove(tournament->scores, (MapKeyElement)&player1);
       }
+      return CHESS_OUT_OF_MEMORY;
     }
   }
 
-  matchNodeDestroyList(matches, false);
-  return score;
+  return CHESS_SUCCESS;
 }
 

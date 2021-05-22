@@ -159,12 +159,13 @@ MapDataElement matchNodeCopy(MapDataElement original_list)
   matchNode original = (matchNode) original_list;
   RETURN_NULL_ON_NULL(original)
 
+  //adding the first matchNode to new list
   matchNode new_list;
-  matchNode node = new_list;
-  //adding the first matchNode to new_list
   Match current = matchNodeGetMatch(original);
   Match toAdd = matchCopy(current);
+  
   new_list = matchNodeCreate(toAdd, NULL);
+  matchNode node = new_list;
   original = matchNodeNext(original);
 
   //adding all other matchNodes from original
