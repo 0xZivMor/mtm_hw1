@@ -160,6 +160,43 @@ void matchDestroy(Match match)
   free(match);
 }
 
+ChessResult matchForfiet(Match match, 
+                         ChessId player, 
+                         ChessId *previous_winner,
+                         ChessId *new_winner)
+{
+  // arguments validation
+  RETURN_RESULT_ON_NULL(match)
+  if (!validateId(player)) {
+    return CHESS_INVALID_ID;
+  }
+
+  if (!matchIsParticipant(match, player)) {
+    return CHESS_PLAYER_NOT_EXIST;
+  }
+
+  if (NULL != previous_winner) {
+    matchGetWinner(match, previous_winner);
+  }
+
+  ChessId opponent;
+  if (match->first == player) {
+    opponent = matchGetSecond(match);
+    match->first = 0;
+  } else {
+    opponent = matchGetFirst(match);
+    match->second = 0;
+  }
+
+  matchSetWinner(match, opponent);
+  
+  if (NULL != new_winner) {
+    *new_winner = opponent;
+  }
+
+  return CHESS_SUCCESS;
+}
+
 static bool isSamePlayers(Match match1, Match match2)
 {
   if (NULL == match1 || NULL == match2) {

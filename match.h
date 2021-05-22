@@ -65,7 +65,27 @@ ChessResult matchSetWinner(Match match, ChessId winner);
  *     CHESS_SUCCESS - winner was set successfully.
  */
 ChessResult matchSetLoser(Match match, ChessId loser);
-ChessResult matchSetLoser(Match match, chessId loser);
+
+/**
+ * Forfiets a match. The provided player's opponent is set as winner and
+ * the player is removed from the match. 
+ * 
+ * @param match Match to forfiet 
+ * @param player ID of player that forfiets the match
+ * @param previous_winner if not NULL, will be set to the ID of the winner
+ *                        prior to the forfiet
+ * @param new_winner if not NULL, will be set to the ID of the winner after
+ *                   the forfiet
+ * @return CHESS_NULL_ARGUMENT - provided match was NULL;
+ *         CHESS_INVALID_ID - invalid player ID was provided
+ *         CHESS_PLAYER_NOT_EXIST - provided winner is not one of the 
+ *                                  participants; 
+ *         CHESS_SUCCESS - match was forfieted successfully. 
+ */
+ChessResult matchForfiet(Match match, 
+                         ChessId player, 
+                         ChessId *previous_winner,
+                         ChessId *new_winner);
 
 /**
  * Checks if the provided player is a participant in the match
