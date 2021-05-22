@@ -1,3 +1,4 @@
+#include "chessSystem.h"
 #include "tournament.h"
 #include "matchnode.h"
 #include "string.h"
@@ -60,6 +61,19 @@ static ChessResult addPlayersIfNotParticipants(Tournament tournament,
  *         CHESS_SUCCESS players scores were updated successfully
  */
 static ChessResult updatePlayersScores(Tournament tournament, Match match);
+
+/**
+ * Updates a player's score in the tournament after her opponent forfieted.
+ * 
+ * @param tournament Tournament in which the match took place
+ * @param new_winner ID of the player whose score is to be updated
+ * @param old_winner ID of the winner before the forfiet
+ * @return CHESS_OUT_OF_MEMORY memory error occured; 
+ *         CHESS_SUCCESS score was updated successfully
+ */
+static ChessResult updatePlayerScoreAfterForfiet(Tournament tournament, 
+                                                 ChessId new_winner, 
+                                                 ChessId old_winner);
 
 Tournament tournamentCreate(ChessId id, const char *location, int max_games_per_player)
 {
@@ -353,6 +367,43 @@ double tournamentAveragePlayTime(Tournament tournament)
   return total_time / num_of_matches;
 }
 
+ChessResult tournamentRemovePlayer(Tournament tournament, ChessId player_id, bool *removed)
+{
+  // arguments validation
+  if (NULL == tournament || NULL == removed) {
+    return CHESS_NULL_ARGUMENT;
+  }
+
+  if (!tournamentIsParticipant(tournament, player_id)) {
+    return CHESS_PLAYER_NOT_EXIST;
+  }
+
+  *removed = false;
+
+  // tournament has ended, can't remove player
+  if (tournamentIsEnded(tournament)) {
+    return CHESS_SUCCESS;
+  }
+
+  matchNode matches = tournament->matches;
+  MATCHNODE_FOREACH(matches) {
+    Match match = matchNodeGetMatch(matches);
+    if (!matchIsParticipant(match, player_id)) {
+      continue;
+    }
+
+    ChessId old_winner, new_winner;
+    matchForfiet(match, player_id, &old_winner, &new_winner);
+    if (CHESS_OUT_OF_MEMORY == updatePlayerScoreAfterForfiet(tournament, new_winner, old_winner)) {
+      return CHESS_OUT_OF_MEMORY;
+    }
+  }
+  
+  mapRemove(tournament->scores, (MapKeyElement)&player_id);
+  *removed = true;
+  return CHESS_SUCCESS;
+}
+
 static bool isInArray(int array[], int length, int toCheck)
 {
   for(int i = 0; i < length; i++) {
@@ -361,6 +412,31 @@ static bool isInArray(int array[], int length, int toCheck)
     }
   }
   return false;
+}
+
+static ChessResult updatePlayerScoreAfterForfiet(Tournament tournament, 
+                                                 ChessId new_winner, 
+                                                 ChessId old_winner)
+{
+  // winner wasn't changed
+  if (old_winner == new_winner) {
+    return CHESS_SUCCESS;
+  }
+
+  int change;
+
+  // previous result was a draw
+  if (!old_winner) {
+    change = 1;
+  } else {  // new winner previouly lost
+    change = 2;
+  }
+
+  int score = *(MAP_GET(tournament->scores, &new_winner, int *)) + change;
+  IF_MAP_PUT(tournament->scores, &new_winner, &score) {
+    return CHESS_OUT_OF_MEMORY;
+  }
+  return CHESS_SUCCESS;
 }
 
 static ChessResult verifyGamesLimit(Tournament tournament,

@@ -214,8 +214,13 @@ ChessResult chessRemovePlayer(ChessSystem chess, int player_id)
   ChessId *current_tournament;
   MAP_FOREACH(ChessId *, current_tournament, chess->tournaments) {
     Tournament tournament = MAP_GET(chess->tournaments, current_tournament, Tournament);
-    removed |= tournamentRemovePlayer(tournament, player_id);
     freeId(current_tournament);
+    
+    bool removed_once;
+    if (CHESS_OUT_OF_MEMORY == tournamentRemovePlayer(tournament, player_id, &removed_once)) {
+      return CHESS_OUT_OF_MEMORY;
+    }
+    removed |= removed_once;
   }
 
   if (removed) { // player was successfully removed from all tournaments

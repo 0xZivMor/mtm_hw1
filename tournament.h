@@ -60,13 +60,19 @@ char* tournamentGetLocation(Tournament tournament);
  * All matches the player participated in will be forfeited.
  * If player wasn't in the tournament, the function will be considered successful.
  * If the tournament has ended or any of the parameters wasn't valid,
- * nothing happens and the player won't be removed
+ * nothing happens and the player won't be removed.
  * 
  * @param tournament Tournament to remove the player from
- * @param player_id id of the player to be removed
- * @return true player was remove 
+ * @param player_id ID of player to be removed
+ * @param removed pointer to boolean, indicating if the player was actually removed
+ * @return CHESS_NULL_ARGUMENT - provided argument was NULL; 
+ *         CHESS_OUT_OF_MEMORY - memory error occured; 
+ *         CHESS_PLAYER_NOT_EXIST - player didn't play in the tournament; 
+ *         CHESS_SUCCESS - operation ended successfully. 
  */
-bool tournamentRemovePlayer(Tournament tournament, ChessId player_id);
+ChessResult tournamentRemovePlayer(Tournament tournament, 
+                                   ChessId player_id, 
+                                   bool *removed);
 
 /**
  * Removes a match from a tournament's matches list.
