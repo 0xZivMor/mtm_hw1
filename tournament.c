@@ -6,7 +6,7 @@
 #include <stdlib.h>
 
 struct tournament_t {
-  chessId id;
+  ChessId id;
   matchNode matches;
   Map scores;
   char *location;
@@ -33,8 +33,8 @@ static bool isInArray(int array[], int length, int toCheck);
  *         CHESS_SUCCESS - match was added successfully.
  */
 static ChessResult verifyGamesLimit(Tournament tournament,
-                                    chessId player1,
-                                    chessId player2);
+                                    ChessId player1,
+                                    ChessId player2);
 
 /**
  * Adds a match's participants to the tournament if they aren't participating
@@ -47,8 +47,8 @@ static ChessResult verifyGamesLimit(Tournament tournament,
  *         CHESS_SUCCESS operation succeded.
  */
 static ChessResult addPlayersIfNotParticipants(Tournament tournament, 
-                                               chessId player1, 
-                                               chessId player2);
+                                               ChessId player1, 
+                                               ChessId player2);
 
 /**
  * Updates a match participants scores in the tournament's scores map.
@@ -61,7 +61,7 @@ static ChessResult addPlayersIfNotParticipants(Tournament tournament,
  */
 static ChessResult updatePlayersScores(Tournament tournament, Match match);
 
-Tournament tournamentCreate(chessId id, const char *location, int max_games_per_player)
+Tournament tournamentCreate(ChessId id, const char *location, int max_games_per_player)
 {
   // checking for incorrect parameters
   if(!validateId(id) || !validateId(max_games_per_player) || 
@@ -115,7 +115,7 @@ ChessResult tournamentAddMatch(Tournament tournament, Match match)
     return CHESS_GAME_ALREADY_EXISTS;
   }
 
-  chessId player1 = matchGetFirst(match), player2 = matchGetSecond(match);
+  ChessId player1 = matchGetFirst(match), player2 = matchGetSecond(match);
   if (CHESS_OUT_OF_MEMORY == addPlayersIfNotParticipants(tournament, 
                                                          player1, 
                                                          player2)) {
@@ -145,7 +145,7 @@ ChessResult tournamentAddMatch(Tournament tournament, Match match)
   return CHESS_SUCCESS;
 }
 
-chessId tournamentGetWinner(Tournament tournament)
+ChessId tournamentGetWinner(Tournament tournament)
 {
     RETURN_ZERO_ON_NULL(tournament);
 
@@ -171,11 +171,12 @@ ChessResult tournamentEnd(Tournament tournament)
     return CHESS_NO_GAMES;
   }
 
-  int *current_player_id, max_score = -1, *current_score;
+  int max_score = -1;
 
   // going over the players
-  MAP_FOREACH(int *, current_player_id, tournament->scores) {
-    current_score = MAP_GET(tournament->scores, current_player_id, int *);
+  ChessId *current_player_id;
+  MAP_FOREACH(ChessId *, current_player_id, tournament->scores) {
+    int *current_score = MAP_GET(tournament->scores, current_player_id, ChessId *);
 
     // replace winner if we got a better result
     if (*current_score > max_score) {
@@ -187,7 +188,7 @@ ChessResult tournamentEnd(Tournament tournament)
         tournament->winner = *current_player_id;
       }
     }
-    freeInt((MapKeyElement)current_player_id);
+    freeId((MapKeyElement)current_player_id);
   }
 
   tournament->finished = true; // updating status
@@ -195,7 +196,7 @@ ChessResult tournamentEnd(Tournament tournament)
 }
 
 ChessResult tournamentGetMatchesByPlayer(Tournament tournament, 
-                                         int player_id, 
+                                         ChessId player_id, 
                                          matchNode *list)
 {
   RETURN_RESULT_ON_NULL(tournament)
@@ -254,7 +255,7 @@ bool tournamentIsEnded(Tournament tournament)
   return tournament->finished;
 }
 
-bool tournamentIsParticipant(Tournament tournament, chessId player_id)
+bool tournamentIsParticipant(Tournament tournament, ChessId player_id)
 {
   return mapContains(tournament->scores, (MapKeyElement)&player_id);
 }
@@ -281,12 +282,11 @@ MapDataElement tournamentCopy(MapDataElement original_tournament)
 int tournamentLongestPlayTime(Tournament tournament)
 {
   RETURN_ZERO_ON_NULL(tournament)
-  matchNode matches = tournament->matches;
-  Match current;
   int max = 0;
 
+  matchNode matches = tournament->matches;
   MATCHNODE_FOREACH(matches) {
-    current = matchNodeGetMatch(matches);
+    Match current = matchNodeGetMatch(matches);
     if(max < matchGetDuration(current)) {
       max = matchGetDuration(current);
     }
@@ -310,7 +310,7 @@ int tournamentNumberOfPlayers(Tournament tournament)
   int num_of_players = 0, num_of_matches = matchNodeGetSize(matches);
   
   //creating a temporary array with enough space, assuming all players played once 
-  chessId *players = (chessId *)malloc(sizeof(chessId) * num_of_matches * 2);
+  ChessId *players = (ChessId *)malloc(sizeof(ChessId) * num_of_matches * 2);
   
   // initialize array to -1 to avoid errors
   for(int i = 0; i < num_of_matches * 2; i++) {
@@ -321,8 +321,8 @@ int tournamentNumberOfPlayers(Tournament tournament)
   
   MATCHNODE_FOREACH(matches) {
     current = matchNodeGetMatch(matches);
-    chessId first = matchGetFirst(current);
-    chessId second = matchGetSecond(current);
+    ChessId first = matchGetFirst(current);
+    ChessId second = matchGetSecond(current);
     if(!isInArray(players, num_of_matches*2,first)) //if first is not in the array already
     {
       players[index_for_players] = first;
@@ -364,8 +364,8 @@ static bool isInArray(int array[], int length, int toCheck)
 }
 
 static ChessResult verifyGamesLimit(Tournament tournament,
-                                    chessId player1,
-                                    chessId player2)
+                                    ChessId player1,
+                                    ChessId player2)
 {
   // creating list of matches played in the tournament by the players
   matchNode player1_matches, player2_matches;
@@ -404,11 +404,11 @@ static ChessResult verifyGamesLimit(Tournament tournament,
 
 static ChessResult updatePlayersScores(Tournament tournament, Match match)
 {
-  chessId player1_id = matchGetFirst(match), player2_id = matchGetSecond(match);
+  ChessId player1_id = matchGetFirst(match), player2_id = matchGetSecond(match);
   int player1_score = *(MAP_GET(tournament->scores, &player1_id, int *));
   int player2_score = *(MAP_GET(tournament->scores, &player2_id, int *));
   
-  chessId winner; 
+  ChessId winner; 
   matchGetWinner(match, &winner);
 
   if (!winner) {  // draw
@@ -436,8 +436,8 @@ static ChessResult updatePlayersScores(Tournament tournament, Match match)
 }
 
 static ChessResult addPlayersIfNotParticipants(Tournament tournament, 
-                                               chessId player1, 
-                                               chessId player2)
+                                               ChessId player1, 
+                                               ChessId player2)
 {
   bool player1_added = false;
   int zero = 0;

@@ -10,10 +10,10 @@ struct node_t {
 
 MapKeyElement copyId(MapKeyElement element)
 {
-  chessId *copy = (chessId*)malloc(sizeof(chessId));
+  ChessId *copy = (ChessId*)malloc(sizeof(ChessId));
   RETURN_NULL_ON_NULL(copy)
 
-  *copy = *((chessId *)element);
+  *copy = *((ChessId *)element);
   return (MapKeyElement)copy;
 }
 
@@ -26,7 +26,7 @@ void freeId(MapKeyElement element)
   free(element);
 }
 
-bool validateId(chessId id)
+bool validateId(ChessId id)
 {
   if (id <= 0) {
     return false;

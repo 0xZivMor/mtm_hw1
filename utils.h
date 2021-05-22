@@ -3,7 +3,7 @@
 
 #include "map.h"
 
-typedef int chessId;
+typedef int ChessId;
 
 #define RETURN_NULL_ON_NULL(arg)  \
   if (NULL == arg) {              \
@@ -68,7 +68,7 @@ void freeId(MapKeyElement element);
  * @return true ID is valid
  * @return false ID is not valid
  */
-bool validateId(chessId id);
+bool validateId(ChessId id);
 
 /**
  * Validates that the provided location string is in compliance 
