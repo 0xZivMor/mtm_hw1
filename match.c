@@ -3,10 +3,10 @@
 #include <stdlib.h>
 
 struct match_t {
-  int first;
-  int second;
-  int winner;
-  int tournament;
+  chessId first;
+  chessId second;
+  chessId winner;
+  chessId tournament;
   int duration;
 };
 
@@ -19,10 +19,10 @@ struct match_t {
  */
 static bool isSamePlayers(Match match1, Match match2);
 
-Match matchCreate(int first_player, 
-                  int second_player, 
-                  int winner, 
-                  int tournament, 
+Match matchCreate(chessId first_player, 
+                  chessId second_player, 
+                  chessId winner, 
+                  chessId tournament, 
                   int duration)
 {
   // arguments validation
@@ -50,19 +50,19 @@ Match matchCreate(int first_player,
   return match;
 }
 
-int matchGetFirst(Match match)
+chessId matchGetFirst(Match match)
 {
   RETURN_ZERO_ON_NULL(match)
   return match->first;
 }
 
-int matchGetSecond(Match match)
+chessId matchGetSecond(Match match)
 {
   RETURN_ZERO_ON_NULL(match)
   return match->second;
 }
 
-ChessResult matchSetWinner(Match match, int winner)
+ChessResult matchSetWinner(Match match, chessId winner)
 {
   RETURN_RESULT_ON_NULL(match)
 
@@ -87,7 +87,7 @@ ChessResult matchSetWinner(Match match, int winner)
   return CHESS_SUCCESS;
 }
 
-ChessResult matchSetLoser(Match match, int loser)
+ChessResult matchSetLoser(Match match, chessId loser)
 {
   RETURN_RESULT_ON_NULL(match)
   
@@ -109,7 +109,7 @@ ChessResult matchSetLoser(Match match, int loser)
   }
 }
 
-bool matchIsParticipant(Match match, int player)
+bool matchIsParticipant(Match match, chessId player)
 {
   if(NULL == match || !validateId(player)) {
     return false;
@@ -123,7 +123,7 @@ bool matchIsParticipant(Match match, int player)
   return true;
 }
 
-ChessResult matchGetWinner(Match match, int *winner)
+ChessResult matchGetWinner(Match match, chessId *winner)
 {
   if(NULL == match)
   {
@@ -135,7 +135,7 @@ ChessResult matchGetWinner(Match match, int *winner)
   return CHESS_SUCCESS;
 }
 
-int matchGetDuration(Match match)
+chessId matchGetDuration(Match match)
 {
   if(NULL == match) {
     return -1;
@@ -144,7 +144,7 @@ int matchGetDuration(Match match)
   return match->duration;
 }
 
-int matchGetTournament(Match match)
+chessId matchGetTournament(Match match)
 {
   RETURN_ZERO_ON_NULL(match)
 

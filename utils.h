@@ -3,6 +3,8 @@
 
 #include "map.h"
 
+typedef int chessId;
+
 #define RETURN_NULL_ON_NULL(arg)  \
   if (NULL == arg) {              \
     return NULL;                  \
@@ -49,14 +51,14 @@
  * @param element Key to be copied
  * @return New copy of element
  */
-MapKeyElement copyInt(MapKeyElement element);
+MapKeyElement copyId(MapKeyElement element);
 
 /**
  * Frees ID keys (integers)
  * 
  * @param element key to be freed
  */
-void freeInt(MapKeyElement element);
+void freeId(MapKeyElement element);
 
 /**
  * Confirms that provided tournament's or player's ID are in compliance with
@@ -66,7 +68,7 @@ void freeInt(MapKeyElement element);
  * @return true ID is valid
  * @return false ID is not valid
  */
-bool validateId(int id);
+bool validateId(chessId id);
 
 /**
  * Validates that the provided location string is in compliance 

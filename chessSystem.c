@@ -22,7 +22,7 @@ struct chess_system_t
  * @return
  *    Winning player's ID (0 in case of draw)
  */
-static int getWinner(int first_player, int second_player, Winner winner);
+static chessId getWinner(chessId first_player, chessId second_player, Winner winner);
 
 /**
  * Removes and destroys all matches that were part of the tournament from
@@ -31,7 +31,7 @@ static int getWinner(int first_player, int second_player, Winner winner);
  * @param chess chess system to remove the Matches from
  * @param tournament Tournament to be removed
  */
-static void chessRemoveMatchesByTournament(ChessSystem chess, int tournament);
+static void chessRemoveMatchesByTournament(ChessSystem chess, chessId tournament);
 
 /**
  * Adds a match to all relevant data structures.
@@ -55,7 +55,7 @@ static ChessResult addMatch(ChessSystem chess, Tournament tournament, Match matc
  * @param matches List of player's matches
  * @return player's level
  */
-static double calcLevel(int player_id, matchNode matches);
+static double calcLevel(chessId player_id, matchNode matches);
 
 ChessSystem chessCreate()
 {
@@ -66,18 +66,18 @@ ChessSystem chessCreate()
   }
 
   chess->tournaments = mapCreate(tournamentCopy, 
-                                 copyInt, 
+                                 copyId, 
                                  tournamentDestroyMap, 
-                                 freeInt, 
+                                 freeId, 
                                  tournamentCompare);
   if (NULL == chess->tournaments) {
     return NULL;
   }
 
   chess->players = mapCreate(matchNodeCopy, 
-                             copyInt, 
+                             copyId, 
                              matchNodeDestroyMap, 
-                             freeInt, 
+                             freeId, 
                              idCompare);
   if (NULL == chess->players) {
     return NULL;
@@ -99,7 +99,7 @@ ChessSystem chessCreate()
   }
 
 #define GET_PLAYER(player_id, player)                         \
-  player = MAP_GET(chess->players, &player_id, int *);        \
+  player = MAP_GET(chess->players, &player_id, chessId *);        \
   if (NULL == player) {                                       \
     return CHESS_PLAYER_NOT_EXIST;                            \
   }
@@ -173,7 +173,7 @@ ChessResult chessAddGame(ChessSystem chess, int tournament_id, int first_player,
   // if a player was created "without need" and will be never used again,
   // it will be freed when the chess instance is destroyed.
   
-  int player_winner = getWinner(first_player, second_player, winner);
+  chessId player_winner = getWinner(first_player, second_player, winner);
   Match match = matchCreate(first_player, 
                             second_player, 
                             player_winner, 
@@ -210,13 +210,13 @@ ChessResult chessRemovePlayer(ChessSystem chess, int player_id)
     return CHESS_PLAYER_NOT_EXIST;
   }
 
-  int *current_tournament;
+  chessId *current_tournament;
   Tournament tournament;
   bool removed = false;
-  MAP_FOREACH(int *, current_tournament, chess->tournaments) {
+  MAP_FOREACH(chessId *, current_tournament, chess->tournaments) {
     tournament = MAP_GET(chess->tournaments, current_tournament, Tournament);
     removed |= tournamentRemovePlayer(tournament, player_id);
-    freeInt(current_tournament);
+    freeId(current_tournament);
   }
 
   if (removed) { // player was successfully removed from all tournaments
@@ -266,7 +266,7 @@ double chessCalculateAveragePlayTime(ChessSystem chess, int player_id, ChessResu
   MAP_FOREACH(Tournament, current, chess->tournaments)
   {
     result = tournamentGetMatchesByPlayer(current, player_id, &matches_to_calculate);
-    freeInt(current); // free the key copy
+    freeId(current); // free the key copy
     
     switch (result) {
       case CHESS_SUCCESS:
@@ -296,26 +296,27 @@ ChessResult chessSavePlayersLevels(ChessSystem chess, FILE* file)
     return CHESS_NULL_ARGUMENT;
   }
 
-  int *player_id, result;
+  chessId *player_id;
+  int result;
   matchNode matches;
 
-  MAP_FOREACH(int *, player_id, chess->players) {
+  MAP_FOREACH(chessId *, player_id, chess->players) {
     matches = MAP_GET(chess->players, player_id, matchNode);
 
     // player hadn't played any matches, don't write
     if (NULL == matches) {
-      freeInt(player_id);
+      freeId(player_id);
       continue;
     }
 
     result = fprintf(file, "%d %f\n", *player_id, calcLevel(*player_id, matches));
     if (result < 0) {
-      freeInt(player_id);
+      freeId(player_id);
       fclose(file);
       return CHESS_SAVE_FAILURE;
     }
 
-    freeInt(player_id);
+    freeId(player_id);
   }
 
   fclose(file);
@@ -332,15 +333,16 @@ ChessResult chessSaveTournamentStatistics(ChessSystem chess, char* path_file)
     return CHESS_SAVE_FAILURE;
   }
 
-  int winner, longest_game, num_of_matches, num_of_players, *tournament_id, result;
+  int longest_game, num_of_matches, num_of_players, *tournament_id, result;
   double average_game_time;
   bool no_tourmanet_ended = true;
   char* location;
+  chessId winner;
   
   Tournament current;
-  MAP_FOREACH(int *, tournament_id, chess->tournaments) {
+  MAP_FOREACH(chessId *, tournament_id, chess->tournaments) {
     current = MAP_GET(chess->tournaments, tournament_id, Tournament);
-    freeInt(tournament_id);
+    freeId(tournament_id);
 
     // adding to stats only if tournament is over
     if(!tournamentIsEnded(current)) {
@@ -373,7 +375,7 @@ ChessResult chessSaveTournamentStatistics(ChessSystem chess, char* path_file)
   return CHESS_SUCCESS;
 }
 
-static int getWinner(int first_player, int second_player, Winner winner)
+static chessId getWinner(chessId first_player, chessId second_player, Winner winner)
 {
   switch (winner) {
   case FIRST_PLAYER:
@@ -400,7 +402,7 @@ static ChessResult addMatch(ChessSystem chess, Tournament tournament, Match matc
     return CHESS_GAME_ALREADY_EXISTS;
   }
 
-  int first = matchGetFirst(match), second = matchGetSecond(match);
+  chessId first = matchGetFirst(match), second = matchGetSecond(match);
   matchNode matches_node = matchNodeCreate(match, chess->matches);
   matchNode p1_node = matchNodeCreate(match, MAP_GET(chess->players, &first, matchNode));
   matchNode p2_node = matchNodeCreate(match, MAP_GET(chess->players, &second, matchNode));
@@ -426,10 +428,11 @@ static ChessResult addMatch(ChessSystem chess, Tournament tournament, Match matc
   return CHESS_SUCCESS;
 }
 
-static double calcLevel(int player_id, matchNode matches) {
+static double calcLevel(chessId player_id, matchNode matches) {
   
   double score = 0;
-  int winner, number_of_games = matchNodeGetSize(matches);
+  int number_of_games = matchNodeGetSize(matches);
+  chessId winner;
   Match match;
 
   MATCHNODE_FOREACH(matches) {
@@ -448,7 +451,7 @@ static double calcLevel(int player_id, matchNode matches) {
   return score / (double)number_of_games; 
 }
 
-static void chessRemoveMatchesByTournament(ChessSystem chess, int tournament) {
+static void chessRemoveMatchesByTournament(ChessSystem chess, chessId tournament) {
 
   matchNode node = chess->matches;
   Match match;

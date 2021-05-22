@@ -8,16 +8,16 @@ struct node_t {
   struct node_t *next;
 };
 
-MapKeyElement copyInt(MapKeyElement element)
+MapKeyElement copyId(MapKeyElement element)
 {
-  int *copy = (int*)malloc(sizeof(int));
+  chessId *copy = (chessId*)malloc(sizeof(chessId));
   RETURN_NULL_ON_NULL(copy)
 
-  *copy = *((int *)element);
+  *copy = *((chessId *)element);
   return (MapKeyElement)copy;
 }
 
-void freeInt(MapKeyElement element)
+void freeId(MapKeyElement element)
 {
   if (NULL == element) {
     return;
@@ -26,7 +26,7 @@ void freeInt(MapKeyElement element)
   free(element);
 }
 
-bool validateId(int id)
+bool validateId(chessId id)
 {
   if (id <= 0) {
     return false;

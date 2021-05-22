@@ -17,7 +17,7 @@ typedef struct tournament_t *Tournament;
  * @return A new Tournament instance, if all parameters are valid and all 
  *         memory allocation operation succeded. NULL otherwise.
  */
-Tournament tournamentCreate(int id, const char *location, int max_games_per_player);
+Tournament tournamentCreate(chessId id, const char *location, int max_games_per_player);
 
 /**
  * Adds a new match to the tournament.
@@ -44,7 +44,7 @@ ChessResult tournamentAddMatch(Tournament tournament, Match match);
  * @param tournament tournament in question
  * @return the id of the winner, 0 if no winner yet
  */ 
-int tournamentGetWinner(Tournament tournament);
+chessId tournamentGetWinner(Tournament tournament);
 
 /**
  * returns the location of the given tournament
@@ -63,10 +63,10 @@ char* tournamentGetLocation(Tournament tournament);
  * nothing happens and the player won't be removed
  * 
  * @param tournament Tournament to remove the player from
- * @param int id of the player to be removed
+ * @param player_id id of the player to be removed
  * @return true player was remove 
  */
-bool tournamentRemovePlayer(Tournament tournament, int player_id);
+bool tournamentRemovePlayer(Tournament tournament, chessId player_id);
 
 /**
  * Removes a match from a tournament's matches list.
@@ -108,7 +108,7 @@ ChessResult tournamentEnd(Tournament tournament);
  *         CHESS_SUCCESS - list was compiled successfully.
  */
 ChessResult tournamentGetMatchesByPlayer(Tournament tournament, 
-                                         int player_id, 
+                                         chessId player_id, 
                                          matchNode *list);
 
 
@@ -148,7 +148,7 @@ bool tournamentIsEnded(Tournament tournament);
  * @return true player is a participant
  * @return false player is not a participant
  */
-bool tournamentIsParticipant(Tournament tournament, int player_id);
+bool tournamentIsParticipant(Tournament tournament, chessId player_id);
 
 /**
  * Creates a copy of the provided Tournament for the Map object.

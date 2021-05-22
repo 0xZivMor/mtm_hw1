@@ -3,6 +3,7 @@
 
 #include <stdbool.h>
 #include "chessSystem.h"
+#include "utils.h"
 
 typedef struct match_t *Match;
 
@@ -18,10 +19,10 @@ typedef struct match_t *Match;
  * @return A new Match instance if all parameters are valid and all memory 
  *         allocation operation succeded. NULL otherwise.
  */
-Match matchCreate(int first_player, 
-                  int second_player, 
-                  int winner,
-                  int tournament, 
+Match matchCreate(chessId first_player, 
+                  chessId second_player, 
+                  chessId winner,
+                  chessId tournament, 
                   int duration);
 
 
@@ -30,14 +31,14 @@ Match matchCreate(int first_player,
  * @param match Match in question
  * @return first player's ID or 0 if recieves NULL arguments
  */
-int matchGetFirst(Match match);
+chessId matchGetFirst(Match match);
 
 /**
  * retrieves the ID of second player of the match
  * @param match Match in question
  * @return second player's ID or 0 if recieves NULL arguments
  */
-int matchGetSecond(Match match);
+chessId matchGetSecond(Match match);
 
 /**
  * Sets the match winner.
@@ -49,7 +50,7 @@ int matchGetSecond(Match match);
  * @return CHESS_PLAYER_NOT_EXIST - provided winner is not one of the participants.
  * @return CHESS_SUCCESS - winner was set successfully.
  */
-ChessResult matchSetWinner(Match match, int winner);
+ChessResult matchSetWinner(Match match, chessId winner);
 
 /**
  * Sets the match winner, thus the player that is not the loser.
@@ -62,7 +63,7 @@ ChessResult matchSetWinner(Match match, int winner);
  *     CHESS_PLAYER_NOT_EXIST - provided loser is not one of the participants.
  *     CHESS_SUCCESS - winner was set successfully.
  */
-ChessResult matchSetLoser(Match match, int loser);
+ChessResult matchSetLoser(Match match, chessId loser);
 
 /**
  * Checks if the provided player is a participant in the match
@@ -73,7 +74,7 @@ ChessResult matchSetLoser(Match match, int loser);
  * @return false - player is not a participant in the match, or NULL parameters
  *         were provided
  */
-bool matchIsParticipant(Match match, int player);
+bool matchIsParticipant(Match match, chessId player);
 
 /**
  * @brief Get the ID of the winner of the match.
@@ -85,7 +86,7 @@ bool matchIsParticipant(Match match, int player);
  *        CHESS_NULL_ARGUMENT - NULL parameter was provided
  *        CHESS_SUCCESS - winner was returned successfully.
  */
-ChessResult matchGetWinner(Match match, int *winner);
+ChessResult matchGetWinner(Match match, chessId *winner);
 
 /**
  * Gets the duration of the match, in seconds.
@@ -111,7 +112,7 @@ void matchDestroy(Match match);
  * @return Tournament ID associated with the match, 0 if NULL parameter was
  *         passed
  */
-int matchGetTournament(Match match);
+chessId matchGetTournament(Match match);
 
 /**
  * Compares Matches based on their tournament and participants.
