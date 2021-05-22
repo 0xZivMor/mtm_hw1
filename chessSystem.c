@@ -92,13 +92,13 @@ ChessSystem chessCreate()
   }
 
 #define GET_TOURNAMENT(tournament_id, tournament)                         \
-  tournament = mapGet(chess->tournaments, (MapKeyElement)&tournament_id); \
+  tournament = MAP_GET(chess->tournaments, &tournament_id, Tournament);   \
   if (NULL == tournament) {                                               \
     return CHESS_TOURNAMENT_NOT_EXIST;                                    \
   }
 
 #define GET_PLAYER(player_id, player)                         \
-  player = mapGet(chess->players, (MapKeyElement)&player_id); \
+  player = MAP_GET(chess->players, &player_id, int *);        \
   if (NULL == player) {                                       \
     return CHESS_PLAYER_NOT_EXIST;                            \
   }
@@ -142,9 +142,7 @@ ChessResult chessAddTournament(ChessSystem chess,
   }
 
   // all parameters are certainly not null so an error must be memory related
-  if (MAP_SUCCESS != mapPut(chess->tournaments, 
-                            (MapKeyElement) &tournament_id, 
-                            (MapDataElement) tournament)) {
+  IF_MAP_PUT(chess->tournaments, &tournament_id, tournament) {
     return CHESS_OUT_OF_MEMORY;
   }
 
@@ -215,7 +213,7 @@ ChessResult chessRemovePlayer(ChessSystem chess, int player_id)
   Tournament tournament;
   bool removed = false;
   MAP_FOREACH(int *, current_tournament, chess->tournaments) {
-    tournament = mapGet(chess->tournaments, current_tournament);
+    tournament = MAP_GET(chess->tournaments, current_tournament, Tournament);
     removed |= tournamentRemovePlayer(tournament, player_id);
     freeInt(current_tournament);
   }
@@ -301,7 +299,7 @@ ChessResult chessSavePlayersLevels(ChessSystem chess, FILE* file)
   matchNode matches;
 
   MAP_FOREACH(int *, player_id, chess->players) {
-    matches = (matchNode)mapGet(chess->players, (MapKeyElement)player_id);
+    matches = MAP_GET(chess->players, player_id, matchNode);
 
     // player hadn't played any matches, don't write
     if (NULL == matches) {
@@ -340,7 +338,7 @@ ChessResult chessSaveTournamentStatistics(ChessSystem chess, char* path_file)
   
   Tournament current;
   MAP_FOREACH(int *, tournament_id, chess->tournaments) {
-    current = (Tournament)mapGet(chess->tournaments, (MapKeyElement)tournament_id);
+    current = MAP_GET(chess->tournaments, tournament_id, Tournament);
     freeInt(tournament_id);
 
     // adding to stats only if tournament is over
@@ -403,27 +401,23 @@ static ChessResult addMatch(ChessSystem chess, Tournament tournament, Match matc
 
   int first = matchGetFirst(match), second = matchGetSecond(match);
   matchNode matches_node = matchNodeCreate(match, chess->matches);
-  matchNode p1_node = matchNodeCreate(match, 
-                                      (matchNode)mapGet(chess->players, 
-                                                        first));
-  matchNode p2_node = matchNodeCreate(match, 
-                                      (matchNode)mapGet(chess->players, 
-                                                        second));
+  matchNode p1_node = matchNodeCreate(match, MAP_GET(chess->players, &first, matchNode));
+  matchNode p2_node = matchNodeCreate(match, MAP_GET(chess->players, &second, matchNode));
   
   // failed to allocate new node
   if (NULL == matches_node || NULL == p1_node || NULL == p2_node) {
     MEMORY_ERROR(matches_node, p1_node, p2_node, match)
   }
 
-  matchNode old = (matchNode)mapGet(chess->players, first);
-  if (MAP_SUCCESS != mapPut(chess->players, first, (MapDataElement)p1_node)) {
+  IF_MAP_PUT(chess->players, &first, p1_node) {
     MEMORY_ERROR(matches_node, p1_node, p2_node, match)
   }
   
-  if (MAP_SUCCESS != mapPut(chess->players, second, (MapDataElement)p2_node)) {
-    // attempt to undo the changes in the first players list, may not work
-    // because we already have memory issues
-    mapPut(chess->players, first, old);
+  IF_MAP_PUT(chess->players, &second, p2_node) {
+   /**
+   * if memory error occures here, we can't undo the change to player1's
+   * matches because we're already out of memory
+   */
     MEMORY_ERROR(matches_node, p1_node, p2_node, match)
   }
   

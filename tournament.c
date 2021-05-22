@@ -128,7 +128,13 @@ ChessResult tournamentAddMatch(Tournament tournament, Match match)
 
 int tournamentGetWinner(Tournament tournament)
 {
-    RETURN_NULL_ON_NULL(tournament);
+    RETURN_ZERO_ON_NULL(tournament);
+
+    // no winner in unfinished tournament
+    if (!tournament->finished) {
+      return 0;
+    }
+
     return tournament->winner;
 }
 
@@ -150,7 +156,7 @@ ChessResult tournamentEnd(Tournament tournament)
 
   // going over the players
   MAP_FOREACH(int *, current_player_id, tournament->scores) {
-    current_score = (int *)mapGet(tournament->scores, (MapKeyElement)current_player_id);
+    current_score = MAP_GET(tournament->scores, current_player_id, int *);
 
     // replace winner if we got a better result
     if (current_score > max_score) {
@@ -252,11 +258,6 @@ MapDataElement tournamentCopy(MapDataElement original_tournament)
   
   return new_tournament;
 }
-
-#define RETURN_ZERO_ON_NULL(arg)  \
-  if(arg == NULL) {               \
-    return 0;                     \
-  }
 
 int tournamentLongestPlayTime(Tournament tournament)
 {

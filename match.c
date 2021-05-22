@@ -50,11 +50,6 @@ Match matchCreate(int first_player,
   return match;
 }
 
-#define RETURN_ZERO_ON_NULL(arg)  \
-  if (NULL == arg) {              \
-    return 0;                     \
-  }
-
 int matchGetFirst(Match match)
 {
   RETURN_ZERO_ON_NULL(match)

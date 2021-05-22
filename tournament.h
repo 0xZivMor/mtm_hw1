@@ -24,7 +24,7 @@ Tournament tournamentCreate(int id, const char *location, int max_games_per_play
  * Matches can't be added after the tournament is ended.
  * 
  * If any of the players isn't found in the tournament's players map, it 
- * will be added
+ * will be added.
  * 
  * @param tournament tournament to add the match to
  * @param match Match to be added
@@ -32,9 +32,6 @@ Tournament tournamentCreate(int id, const char *location, int max_games_per_play
  *         CHESS_TOURNAMENT_ENDED - the tournament is over;
  *         CHESS_GAME_ALREADY_EXIST - match with the same participants was 
  *                                    already added to the tournament;
- *         CHESS_PLAYER_NOT_EXIST - one of the players in the match wasn't
- *                                  added to the tournament ahead of the
- *                                  match; 
  *         CHESS_INVALID_MAX_GAMES - one of the particiapnts has already 
  *                                   reached the maximum games allowed;
  *         CHESS_SUCCESS - match was added successfully.

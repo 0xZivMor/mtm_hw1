@@ -8,9 +8,14 @@
     return NULL;                  \
   }
 
-#define RETURN_RESULT_ON_NULL(arg) \
-  if (NULL == arg) {              \
-    return CHESS_NULL_ARGUMENT;   \
+#define RETURN_RESULT_ON_NULL(arg)  \
+  if (NULL == arg) {                \
+    return CHESS_NULL_ARGUMENT;     \
+  }
+
+#define RETURN_ZERO_ON_NULL(arg)  \
+  if (arg == 0) {                \
+    return 0;     \
   }
 
 // both argument are NULL -> they are "same" 
@@ -29,8 +34,15 @@
   }
 
 #define MATCHNODE_FOREACH(list) \
-      for(;list;matchNodeNext(list)) \
+      for(;list;matchNodeNext(list))
 
+#define IF_MAP_PUT(map, key, data)                          \
+  if (MAP_OUT_OF_MEMORY == mapPut(map,                      \
+                                  (MapKeyElement)key,       \
+                                  (MapDataElement)data))    
+
+#define MAP_GET(map, key, type)         \
+   (type)mapGet(map,(MapKeyElement)key)      
 /**
  * Ids are integers. Copies the key to a new integer.
  * 
