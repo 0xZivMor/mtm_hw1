@@ -51,13 +51,6 @@ static Node newNode(MapKeyElement key,
  */
 static Node mapFind(Map map, MapKeyElement key);
 
-/**
- * Resets the map iterator.
- * 
- * @param map - map in question
- */
-static void mapReset(Map map);
-
 Map mapCreate(copyMapDataElements copy_data_elements_method,
               copyMapKeyElements copy_key_elements_method,
               freeMapDataElements free_data_elements_method,
@@ -334,13 +327,4 @@ static Node newNode(MapKeyElement key,
   new_node->previous = previous;
 
   return new_node;
-}
-
-static void mapReset(Map map)
-{
-  if (NULL == map) {
-    return;
-  }
-
-  map->current = map->top;
 }
