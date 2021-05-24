@@ -36,6 +36,10 @@ bool validateId(ChessId id)
 
 bool validateLocation(const char *location)
 {
+  if (NULL == location) {
+    return false;
+  }
+  
   // Not empty
   if (!strlen(location)) {
     return false;
@@ -60,5 +64,5 @@ bool validateLocation(const char *location)
 
 int idCompare(MapKeyElement element1, MapKeyElement element2)
 {
-  return *((int *)element1) - *((int *)element2);
+  return (int)*((ChessId *)element1) - (int)*((ChessId *)element2);
 }

@@ -315,7 +315,7 @@ static Node newNode(MapKeyElement key,
                     Node next,
                     Node previous)
 {
-  Node new_node = (Node)malloc(sizeof(struct node_t));
+  Node new_node = (Node)malloc(sizeof(*new_node));
 
   if (NULL == new_node) {
     return NULL;

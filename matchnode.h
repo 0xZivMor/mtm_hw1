@@ -138,7 +138,7 @@ MapDataElement matchNodeCopy(MapDataElement original_list);
  */
 void matchNodeDestroyMap(MapDataElement element);
 
-#define FOREACH_MATCH(iter) \
-  for(;iter; iter = matchNodeNext(iter))
+#define FOREACH_MATCH(list, iter) \
+  for(matchNode iter = list ;iter; iter = matchNodeNext(iter))
 
 #endif // _MATCHNODE_H

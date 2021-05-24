@@ -59,7 +59,7 @@ int matchNodeGetSize(matchNode list)
 {
   int counter = 0;
   
-  FOREACH_MATCH(list) {
+  FOREACH_MATCH(list, current) {
     counter++;
   }
 
@@ -184,8 +184,7 @@ MapDataElement matchNodeCopy(MapDataElement original_list)
 
 void matchNodeDestroyMap(MapDataElement element)
 {
-  if(element == NULL)
-  {
+  if(element == NULL) {
     return;
   }
   matchNodeDestroyList((matchNode)element, true);
@@ -193,10 +192,10 @@ void matchNodeDestroyMap(MapDataElement element)
 
 bool matchNodeInList(matchNode head, Match match)
 {
-  FOREACH_MATCH(head) {
-    Match current = matchNodeGetMatch(head);
+  FOREACH_MATCH(head, current) {
+    Match current_match = matchNodeGetMatch(current);
 
-    if (!matchCompare(match, current)) {
+    if (!matchCompare(match, current_match)) {
       return true;
     }
   }

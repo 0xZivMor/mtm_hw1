@@ -88,15 +88,15 @@ Tournament tournamentCreate(ChessId id, const char *location, int max_games_per_
 
   tournament->id = id;
   tournament->matches = NULL;
-  tournament->scores = mapCreate(copyId, 
+  tournament->scores = mapCreate(copyId, // copies int
                                  copyId, 
-                                 freeId, 
+                                 freeId, // frees int
                                  freeId, 
                                  idCompare);
   RETURN_NULL_ON_NULL(tournament->scores)
 
-  int length = strlen(location) + 1;
-  char *new_loc = (char *)malloc(sizeof(char) * length);
+  int length = strlen(location);
+  char *new_loc = (char *)malloc(sizeof(char) * (length + 1));
   
   if(NULL == new_loc) {
     tournamentDestroy(tournament);
@@ -188,7 +188,6 @@ ChessResult tournamentEnd(Tournament tournament)
   int max_score = -1;
 
   // going over the players
-  ChessId *current_player_id;
   MAP_FOREACH(ChessId *, current_player_id, tournament->scores) {
     int *current_score = MAP_GET(tournament->scores, current_player_id, ChessId *);
 
@@ -223,8 +222,8 @@ ChessResult tournamentGetMatchesByPlayer(Tournament tournament,
   // if a player exists in a tournament, it must participate in atleast one match
   matchNode matches = tournament->matches, new_node = NULL;
   
-  FOREACH_MATCH(matches) {
-    Match match = matchNodeGetMatch(matches);
+  FOREACH_MATCH(matches, current) {
+    Match match = matchNodeGetMatch(current);
     if (matchIsParticipant(match, player_id)) {
       new_node = matchNodeCreate(match, new_node);
       if (NULL == new_node) {  // memory error
