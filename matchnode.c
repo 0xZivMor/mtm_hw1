@@ -11,8 +11,6 @@ struct match_node_t
 
 matchNode matchNodeCreate(Match match, matchNode next)
 {
-  RETURN_NULL_ON_NULL(match);
-
   matchNode new_match_node = (matchNode) malloc(sizeof(*new_match_node));
   RETURN_NULL_ON_NULL(new_match_node)
   
@@ -44,14 +42,12 @@ matchNode matchNodeNext(matchNode node)
 int matchNodeTotalTime(matchNode list)
 {
   int total_time = 0;
-  matchNode node = list;
-  Match current;
-  while(node)
-  {
-    current = matchNodeGetMatch(node);
-    total_time += matchGetDuration(current);
-    node = matchNodeNext(node);
+  
+  FOREACH_MATCH(list, current) {
+    Match current_match = matchNodeGetMatch(current);
+    total_time += matchGetDuration(current_match);
   }
+
   return total_time;
 }
 
@@ -113,10 +109,8 @@ void matchNodeDestroy(matchNode node, bool destory_match)
 void matchNodeDestroyList(matchNode head, bool destory_match)
 {
   matchNode current = head;
-  matchNode toDestroy;
-  while(current != NULL)
-  {
-    toDestroy = current;
+  while(current != NULL) {
+    matchNode toDestroy = current;
     current = matchNodeNext(current);
     matchNodeDestroy(toDestroy, destory_match);
   }
@@ -156,23 +150,21 @@ void matchNodeRemoveTournamentFromList(matchNode list, int tournament_id, bool d
 
 MapDataElement matchNodeCopy(MapDataElement original_list)
 {
+  RETURN_NULL_ON_NULL(original_list)
   matchNode original = (matchNode) original_list;
-  RETURN_NULL_ON_NULL(original)
 
   //adding the first matchNode to new list
   matchNode new_list;
-  Match current = matchNodeGetMatch(original);
-  Match toAdd = matchCopy(current);
+  Match match = matchNodeGetMatch(original);
   
-  new_list = matchNodeCreate(toAdd, NULL);
+  new_list = matchNodeCreate(match, NULL);
   matchNode node = new_list;
   original = matchNodeNext(original);
 
   //adding all other matchNodes from original
   while(NULL != original) {
-    current = matchNodeGetMatch(original);
-    toAdd = matchCopy(current);
-    node = matchNodeAdd(node, toAdd);
+    match = matchNodeGetMatch(original);
+    node = matchNodeAdd(node, match);
     if(NULL == node) {
       matchNodeDestroy(new_list, false);
     }
@@ -184,7 +176,7 @@ MapDataElement matchNodeCopy(MapDataElement original_list)
 
 void matchNodeDestroyMap(MapDataElement element)
 {
-  if(element == NULL) {
+  if (NULL == element) {
     return;
   }
   matchNodeDestroyList((matchNode)element, true);

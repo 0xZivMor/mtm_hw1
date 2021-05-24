@@ -3,11 +3,6 @@
 #include <string.h>
 #include <stdlib.h>
 
-struct node_t {
-  void *value;
-  struct node_t *next;
-};
-
 MapKeyElement copyId(MapKeyElement element)
 {
   ChessId *copy = (ChessId*)malloc(sizeof(ChessId));

@@ -13,7 +13,7 @@ typedef struct match_node_t *matchNode;
  * @param match Match to be added to the list
  * @param next matchNode to point to as next. May be NULL
  * @return 
- *    NULL if match was NULL or memory failure occured
+ *    NULL if memory failure occured
  *    new matchNode otherwise 
  */
 matchNode matchNodeCreate(Match match, matchNode next);

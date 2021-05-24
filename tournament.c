@@ -214,23 +214,28 @@ ChessResult tournamentGetMatchesByPlayer(Tournament tournament,
 {
   RETURN_RESULT_ON_NULL(tournament)
 
+  // dummy value for list
+  *list = matchNodeCreate(NULL, NULL);
+
   if (!tournamentIsParticipant(tournament, player_id)) {
+    matchNodeDestroy(*list, false);
     *list = NULL;
     return CHESS_PLAYER_NOT_EXIST;
   }
 
-  // if a player exists in a tournament, it must participate in atleast one match
-  matchNode matches = tournament->matches, new_node = NULL;
-  
-  FOREACH_MATCH(matches, current) {
+  // compile a list of all the matches the player took part in
+  FOREACH_MATCH(tournament->matches, current) {
     Match match = matchNodeGetMatch(current);
+    
     if (matchIsParticipant(match, player_id)) {
-      new_node = matchNodeCreate(match, new_node);
+      matchNode new_node = matchNodeCreate(match, *list);
+      
       if (NULL == new_node) {  // memory error
         matchNodeDestroyList(*list, false);
         *list = NULL;
         return CHESS_OUT_OF_MEMORY;
       }
+
       *list = new_node;
     }
   }
@@ -531,7 +536,7 @@ static ChessResult addPlayersIfNotParticipants(Tournament tournament,
     player1_added = true;
   }
 
-  if (!tournamentIsParticipant(tournament, player1)) {
+  if (!tournamentIsParticipant(tournament, player2)) {
     IF_MAP_PUT(tournament->scores, &player2, &zero) {
       // player1 was added to the tournament on this call, remove it
       if (player1_added) {
