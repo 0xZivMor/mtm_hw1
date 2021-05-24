@@ -425,8 +425,8 @@ static double calcLevel(ChessId player_id, matchNode matches) {
   double score = 0;
   int number_of_games = matchNodeGetSize(matches);
 
-  MATCHNODE_FOREACH(matches) {
-    Match match = matchNodeGetMatch(matches);
+  FOREACH_MATCH(matches, current) {
+    Match match = matchNodeGetMatch(current);
     ChessId winner = matchGetWinner(match, &winner);
 
     if (winner == player_id) {

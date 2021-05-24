@@ -35,9 +35,6 @@ typedef int ChessId;
     }                                   \
   }
 
-#define MATCHNODE_FOREACH(list) \
-      for(;list;matchNodeNext(list))
-
 #define IF_MAP_PUT(map, key, data)                          \
   if (MAP_OUT_OF_MEMORY == mapPut(map,                      \
                                   (MapKeyElement)key,       \

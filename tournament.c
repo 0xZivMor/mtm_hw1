@@ -309,10 +309,9 @@ int tournamentLongestPlayTime(Tournament tournament)
   RETURN_ZERO_ON_NULL(tournament)
   int max = 0;
 
-  matchNode matches = tournament->matches;
-  MATCHNODE_FOREACH(matches) {
-    Match current = matchNodeGetMatch(matches);
-    if(max < matchGetDuration(current)) {
+  FOREACH_MATCH(tournament->matches, node) {
+    Match current = matchNodeGetMatch(node);
+    if (max < matchGetDuration(current)) {
       max = matchGetDuration(current);
     }
   }
@@ -331,8 +330,7 @@ int tournamentNumberOfPlayers(Tournament tournament)
   RETURN_ZERO_ON_NULL(tournament)
 
   matchNode matches = tournament->matches;
-  Match current;
-  int num_of_players = 0, num_of_matches = matchNodeGetSize(matches);
+  int num_of_matches = matchNodeGetSize(matches);
   
   //creating a temporary array with enough space, assuming all players played once 
   ChessId *players = (ChessId *)malloc(sizeof(ChessId) * num_of_matches * 2);
@@ -344,17 +342,19 @@ int tournamentNumberOfPlayers(Tournament tournament)
 
   int index_for_players = 0;
   
-  MATCHNODE_FOREACH(matches) {
-    current = matchNodeGetMatch(matches);
-    ChessId first = matchGetFirst(current);
-    ChessId second = matchGetSecond(current);
-    if(!isInArray(players, num_of_matches*2,first)) //if first is not in the array already
-    {
+  FOREACH_MATCH(tournament->matches, current) {
+    Match match = matchNodeGetMatch(current);
+    ChessId first = matchGetFirst(match);
+    ChessId second = matchGetSecond(match);
+
+    // first is not in the array already
+    if (!isInArray(players, num_of_matches * 2, first)) {
       players[index_for_players] = first;
       index_for_players++;
     }
-    if(!isInArray(players, num_of_matches*2, second)) //if second is not in the array already
-    {
+
+    // second is not in the array already
+    if(!isInArray(players, num_of_matches*2, second)) {
       players[index_for_players] = second;
       index_for_players++;
     }
@@ -396,9 +396,8 @@ ChessResult tournamentRemovePlayer(Tournament tournament, ChessId player_id, boo
     return CHESS_SUCCESS;
   }
 
-  matchNode matches = tournament->matches;
-  MATCHNODE_FOREACH(matches) {
-    Match match = matchNodeGetMatch(matches);
+  FOREACH_MATCH(tournament->matches, current) {
+    Match match = matchNodeGetMatch(current);
     if (!matchIsParticipant(match, player_id)) {
       continue;
     }
