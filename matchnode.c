@@ -11,7 +11,7 @@ struct match_node_t
 
 matchNode matchNodeCreate(Match match, matchNode next)
 {
-  matchNode new_match_node = (matchNode) malloc(sizeof(*new_match_node));
+  matchNode new_match_node = (matchNode)malloc(sizeof(*new_match_node));
   RETURN_NULL_ON_NULL(new_match_node)
   
   new_match_node->match = match;
@@ -25,7 +25,7 @@ matchNode matchNodeAdd(matchNode previous, Match match)
   {
     return NULL;
   }
-  matchNode new_match_node = (matchNode) malloc(sizeof(*new_match_node));
+  matchNode new_match_node = (matchNode)malloc(sizeof(*new_match_node));
   RETURN_NULL_ON_NULL(new_match_node);
 
   new_match_node->match = match;
@@ -151,24 +151,17 @@ void matchNodeRemoveTournamentFromList(matchNode list, int tournament_id, bool d
 MapDataElement matchNodeCopy(MapDataElement original_list)
 {
   RETURN_NULL_ON_NULL(original_list)
-  matchNode original = (matchNode) original_list;
+  matchNode original = (matchNode) original_list, new_list = NULL;
 
-  //adding the first matchNode to new list
-  matchNode new_list;
-  Match match = matchNodeGetMatch(original);
-  
-  new_list = matchNodeCreate(match, NULL);
-  matchNode node = new_list;
-  original = matchNodeNext(original);
+  FOREACH_MATCH(original, current) {
+    Match match = matchNodeGetMatch(current);
+    matchNode new_node = matchNodeCreate(match, new_list);
 
-  //adding all other matchNodes from original
-  while(NULL != original) {
-    match = matchNodeGetMatch(original);
-    node = matchNodeAdd(node, match);
-    if(NULL == node) {
-      matchNodeDestroy(new_list, false);
+    if (NULL == new_node) { // memory error
+      matchNodeDestroyList(new_list, false);
+      return NULL;
     }
-    original = matchNodeNext(original);
+    new_list = new_node;
   }
 
   return (MapDataElement) new_list;
@@ -179,7 +172,7 @@ void matchNodeDestroyMap(MapDataElement element)
   if (NULL == element) {
     return;
   }
-  matchNodeDestroyList((matchNode)element, true);
+  matchNodeDestroyList((matchNode)element, false);
 }
 
 bool matchNodeInList(matchNode head, Match match)

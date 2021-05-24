@@ -475,11 +475,11 @@ static ChessResult verifyGamesLimit(Tournament tournament,
 
   // over the limit matches by atleast one of the participants
   if (CHESS_SUCCESS == first && 
-      matchNodeGetSize(player1_matches) <= tournament->max_matches_per_player) {
+      matchNodeGetSize(player1_matches) >= tournament->max_matches_per_player) {
     result = CHESS_INVALID_MAX_GAMES;
   }
   if (CHESS_SUCCESS == second && 
-      matchNodeGetSize(player2_matches) <= tournament->max_matches_per_player) {
+      matchNodeGetSize(player2_matches) >= tournament->max_matches_per_player) {
     result = CHESS_INVALID_MAX_GAMES;
   }
 

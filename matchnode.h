@@ -132,7 +132,7 @@ MapDataElement matchNodeCopy(MapDataElement original_list);
 
 /**
  * Destroy function for GDT map. Basically, a wrapper of 
- * mathNodeDestoryList(list, true).
+ * mathNodeDestoryList(list, false).
  * 
  * @param element First matchNode in list to destroy
  */
