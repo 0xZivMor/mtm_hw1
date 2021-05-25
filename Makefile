@@ -1,18 +1,15 @@
 CC = gcc
-CC_ARGS = -g -std=c99 -Wall -Werror -pedantic-errors 
-DEBUG_ARGS = -Wfatal-errors -Wno-unused-variable
-MODULES = chessSystem.c match.c matchnode.c tournament.c utils.c
-OBJECTS = chessSystem.o match.o matchnode.o tournament.o utils.o
+CFLAGS = -std=c99 -Wall -Werror -pedantic-errors -DNDEBUG
+EXEC = chess
+OBJS = chessSystem.o match.o matchnode.o tournament.o utils.o
 
-default: clean chess_test
+$(EXEC): $(OBJS)
+	$(CC) $(CFLAGS) $(OBJS) -L. -lmap exampleMain.c -o $@
 
-%.o: %.c
-	$(CC) $(CC_ARGS) $(DEBUG_ARGS) -c $< -o $@
-
-chess_test: $(OBJECTS)
-	$(CC) $(CC_ARGS) $(DEBUG_ARGS) $(OBJECTS) -L. -lmap tests/chessSystemTestsExample.c -o $@
+%.o: %.c %.h
+	$(CC) $(CFLAGS) -c $*.c -o $@
 
 clean:
-	rm -f chess_test $(OBJECTS)
+	rm -f $(EXEC) $(OBJS)
 
-.PHONY: clean default
+.PHONY: clean
