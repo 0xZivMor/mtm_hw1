@@ -360,7 +360,7 @@ ChessResult chessSaveTournamentStatistics(ChessSystem chess, char* path_file)
   }
 
   fclose(stats_file);
-  if (!no_tourmanet_ended) {
+  if (no_tourmanet_ended) {
     return CHESS_NO_TOURNAMENTS_ENDED;
   }
 
@@ -417,6 +417,8 @@ static ChessResult addMatch(ChessSystem chess, Tournament tournament, Match matc
   }
   
   chess->matches = matches_node;
+  matchNodeDestroy(p1_node, false);
+  matchNodeDestroy(p2_node, false);
   return CHESS_SUCCESS;
 }
 
