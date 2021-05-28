@@ -32,8 +32,8 @@ Tournament tournamentCreate(ChessId id, const char *location, int max_games_per_
  *         CHESS_TOURNAMENT_ENDED - the tournament is over;
  *         CHESS_GAME_ALREADY_EXIST - match with the same participants was 
  *                                    already added to the tournament;
- *         CHESS_INVALID_MAX_GAMES - one of the particiapnts has already 
- *                                   reached the maximum games allowed;
+ *         CHESS_EXCEEDED_GAMES - one of the particiapnts has already 
+ *                                reached the maximum games allowed;
  *         CHESS_SUCCESS - match was added successfully.
  */
 ChessResult tournamentAddMatch(Tournament tournament, Match match);

@@ -111,12 +111,10 @@ bool matchIsParticipant(Match match, ChessId player);
 ChessResult matchGetWinner(Match match, ChessId *winner);
 
 /**
- * Gets the duration of the match, in seconds.
+ * Gets the duration of the match, in seconds. Returns 0 if match is NULL
  * 
  * @param match Match in question
- * @return
- *         >= 0 match duration
- *         -1 or error
+ * @return match duration
  */
 int matchGetDuration(Match match);
 

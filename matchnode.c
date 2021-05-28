@@ -56,7 +56,10 @@ int matchNodeGetSize(matchNode list)
   int counter = 0;
   
   FOREACH_MATCH(list, current) {
-    counter++;
+    // don't count dummy nodes
+    if (NULL != matchNodeGetMatch(current)) {
+      counter++;
+    }
   }
 
   return counter;

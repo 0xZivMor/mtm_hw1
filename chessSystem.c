@@ -126,9 +126,13 @@ ChessResult chessAddTournament(ChessSystem chess,
   if (mapContains(chess->tournaments, &tournament_id)) {
     return CHESS_TOURNAMENT_ALREADY_EXISTS;
   }
-  
+
   if (!validateLocation(tournament_location)) {
     return CHESS_INVALID_LOCATION;
+  }
+
+  if (max_games_per_player <= 0) {
+    return CHESS_INVALID_MAX_GAMES;
   }
 
   Tournament tournament = tournamentCreate(tournament_id,
@@ -141,6 +145,7 @@ ChessResult chessAddTournament(ChessSystem chess,
 
   // all parameters are certainly not null so an error must be memory related
   IF_MAP_PUT(chess->tournaments, &tournament_id, tournament) {
+    tournamentDestroy(tournament);
     return CHESS_OUT_OF_MEMORY;
   }
 
@@ -148,11 +153,12 @@ ChessResult chessAddTournament(ChessSystem chess,
   return CHESS_SUCCESS;
 }
 
-#define ADD_PLAYER_IF_NEW(chess, player)                        \
-   if (!mapContains(chess->players, (MapKeyElement)&player)) {  \
-    IF_MAP_PUT(chess->players, &player, NULL) {                 \
-      return CHESS_OUT_OF_MEMORY;                               \
-    }                                                           \
+// dummy node as the first node in the matches list
+#define ADD_PLAYER_IF_NEW(chess, player)                                \
+   if (!mapContains(chess->players, (MapKeyElement)&player)) {          \
+    IF_MAP_PUT(chess->players, &player, matchNodeCreate(NULL, NULL)) {  \
+      return CHESS_OUT_OF_MEMORY;                                       \
+    }                                                                   \
   }
 ChessResult chessAddGame(ChessSystem chess, int tournament_id, int first_player,
                          int second_player, Winner winner, int play_time)
@@ -177,19 +183,24 @@ ChessResult chessAddGame(ChessSystem chess, int tournament_id, int first_player,
   // players seen for the first time
   ADD_PLAYER_IF_NEW(chess, first_player)
   ADD_PLAYER_IF_NEW(chess, second_player)
-  
+
   ChessId player_winner = getWinner(first_player, second_player, winner);
-  Match match = matchCreate(first_player, 
-                            second_player, 
-                            player_winner, 
-                            tournament_id, 
+  Match match = matchCreate(first_player,
+                            second_player,
+                            player_winner,
+                            tournament_id,
                             play_time);
 
   if (NULL == match) {
     return CHESS_OUT_OF_MEMORY;
   }
 
-  return addMatch(chess, tournament, match);
+  ChessResult result = addMatch(chess, tournament, match);
+  if (CHESS_SUCCESS != result) {
+    matchDestroy(match);
+  }
+
+  return result;
 }
 
 ChessResult chessRemoveTournament(ChessSystem chess, int tournament_id)
@@ -264,18 +275,21 @@ double chessCalculateAveragePlayTime(ChessSystem chess, int player_id, ChessResu
     return 0.0;                            
   }
 
-  double total_time = 0, number_of_games = 0;
+  double total_time = 0.0, number_of_games = 0.0;
+  bool player_found = false;
 
   // going over all of the tournaments and taking matches played by player_id
-  MAP_FOREACH(Tournament, current, chess->tournaments)
+  MAP_FOREACH(ChessId *, current, chess->tournaments)
   {
     matchNode matches_to_calculate;
-    ChessResult result = tournamentGetMatchesByPlayer(current, player_id, &matches_to_calculate);
+    Tournament tournament = MAP_GET(chess->tournaments, current, Tournament);
+    ChessResult result = tournamentGetMatchesByPlayer(tournament, player_id, &matches_to_calculate);
     freeId(current); // free the key copy
     
     switch (result) {
       case CHESS_SUCCESS:
         //calculating number of games played and total time by player_id
+        player_found = true;
         number_of_games += matchNodeGetSize(matches_to_calculate);
         total_time += matchNodeTotalTime(matches_to_calculate);
         break;
@@ -287,11 +301,17 @@ double chessCalculateAveragePlayTime(ChessSystem chess, int player_id, ChessResu
         continue;
     }
   }
+
+  if (!player_found) {
+    *chess_result = CHESS_PLAYER_NOT_EXIST;
+    return 0.0;
+  }
   
   if(!number_of_games) {
     return 0.0;
   }
 
+  *chess_result = CHESS_SUCCESS;
   return total_time / number_of_games; //the average play time
 }
 
@@ -304,18 +324,11 @@ ChessResult chessSavePlayersLevels(ChessSystem chess, FILE* file)
   MAP_FOREACH(ChessId *, player_id, chess->players) {
     matchNode matches = MAP_GET(chess->players, player_id, matchNode);
 
-    // player hadn't played any matches, don't write
-    if (NULL == matches) {
-      freeId(player_id);
-      continue;
-    }
-
-    int result = fprintf(file, "%d %f\n", *player_id, calcLevel(*player_id, matches));
+    int result = fprintf(file, "%d %.2f\n", *player_id, calcLevel(*player_id, matches));
     if (result < 0) {
       freeId(player_id);
       return CHESS_SAVE_FAILURE;
     }
-
     freeId(player_id);
   }
 
@@ -352,16 +365,14 @@ ChessResult chessSaveTournamentStatistics(ChessSystem chess, char* path_file)
     double average_game_time = tournamentAveragePlayTime(current);
 
     int result = fprintf(stats_file, 
-                     "%d\n%d\n%f\n%s\n%d\n%d\n\n",
+                     "%d\n%d\n%.2f\n%s\n%d\n%d\n",
                      winner, longest_game, average_game_time, location,
                      num_of_matches, num_of_players);
     if (result < 0) { // writing to file error
-      // fclose(stats_file);
       return CHESS_SAVE_FAILURE;
     }
   }
 
-  // fclose(stats_file);
   if (no_tourmanet_ended) {
     return CHESS_NO_TOURNAMENTS_ENDED;
   }
@@ -391,9 +402,15 @@ static ChessId getWinner(ChessId first_player, ChessId second_player, Winner win
 
 static ChessResult addMatch(ChessSystem chess, Tournament tournament, Match match)
 {
-  if (tournamentAddMatch(tournament, match) == CHESS_GAME_ALREADY_EXISTS) {
-    matchDestroy(match);
+  switch (tournamentAddMatch(tournament, match)) {
+  case CHESS_GAME_ALREADY_EXISTS:
     return CHESS_GAME_ALREADY_EXISTS;
+  case CHESS_TOURNAMENT_ENDED:
+    return CHESS_TOURNAMENT_ENDED;
+  case CHESS_EXCEEDED_GAMES:
+    return CHESS_EXCEEDED_GAMES;
+  default:
+    break;
   }
 
   ChessId first = matchGetFirst(match), second = matchGetSecond(match);
@@ -426,17 +443,25 @@ static ChessResult addMatch(ChessSystem chess, Tournament tournament, Match matc
 
 static double calcLevel(ChessId player_id, matchNode matches) {
   
-  double score = 0;
+  double score = 0.0;
   int number_of_games = matchNodeGetSize(matches);
+
+  if (!number_of_games) {
+    return 0.0;
+  }
 
   FOREACH_MATCH(matches, current) {
     Match match = matchNodeGetMatch(current);
-    ChessId winner = matchGetWinner(match, &winner);
+    if (NULL == match) {
+      continue;
+    }
+    ChessId winner;
+    matchGetWinner(match, &winner);
 
     if (winner == player_id) {
-      score += 6;
+      score += 6.0;
     } else if (winner == 0) { // draw
-      score += 2;
+      score += 2.0;
     } else {  // player lost
       score -= 10;
     }

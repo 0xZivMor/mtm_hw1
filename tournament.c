@@ -29,8 +29,8 @@ static bool isInArray(int array[], int length, int toCheck);
  * @param player1 ID of first participant
  * @param player2 ID of second participant
  * @return CHESS_OUT_OF_MEMORY - memory error occured
- *         CHESS_INVALID_MAX_GAMES - one of the particiapnts has already 
- *                                   participated in maximum games allowed
+ *         CHESS_EXCEEDED_GAMES - one of the particiapnts has already 
+ *                                participated in maximum games allowed
  *         CHESS_SUCCESS - match was added successfully.
  */
 static ChessResult verifyGamesLimit(Tournament tournament,
@@ -139,8 +139,8 @@ ChessResult tournamentAddMatch(Tournament tournament, Match match)
   switch (verifyGamesLimit(tournament, player1, player2)) {
     case CHESS_OUT_OF_MEMORY:
       return CHESS_OUT_OF_MEMORY;
-    case CHESS_INVALID_MAX_GAMES:
-      return CHESS_INVALID_MAX_GAMES;
+    case CHESS_EXCEEDED_GAMES:
+      return CHESS_EXCEEDED_GAMES;
     default:
       break;
   }
@@ -181,6 +181,10 @@ ChessResult tournamentEnd(Tournament tournament)
 {
   RETURN_RESULT_ON_NULL(tournament)
   
+  if (tournament->finished) {
+    return CHESS_TOURNAMENT_ENDED;
+  }
+
   if (!tournamentNumberOfMatches(tournament)) {
     return CHESS_NO_GAMES;
   }
@@ -476,11 +480,11 @@ static ChessResult verifyGamesLimit(Tournament tournament,
   // over the limit matches by atleast one of the participants
   if (CHESS_SUCCESS == first && 
       matchNodeGetSize(player1_matches) >= tournament->max_matches_per_player) {
-    result = CHESS_INVALID_MAX_GAMES;
+    result = CHESS_EXCEEDED_GAMES;
   }
   if (CHESS_SUCCESS == second && 
       matchNodeGetSize(player2_matches) >= tournament->max_matches_per_player) {
-    result = CHESS_INVALID_MAX_GAMES;
+    result = CHESS_EXCEEDED_GAMES;
   }
 
   matchNodeDestroyList(player1_matches, false);

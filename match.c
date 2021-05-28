@@ -138,7 +138,7 @@ ChessResult matchGetWinner(Match match, ChessId *winner)
 ChessId matchGetDuration(Match match)
 {
   if(NULL == match) {
-    return -1;
+    return 0;
   }
 
   return match->duration;
