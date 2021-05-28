@@ -71,10 +71,10 @@ Match matchNodeGetMatch(matchNode node);
  * Removes the provided match from the list. If match is not found in the list, 
  * does nothing
  * 
- * @param list First matchNode in the list
+ * @param list pointer to the first matchNode in the list
  * @param match Match to be removed  
  */
-void matchNodeRemove(matchNode list, Match match);
+void matchNodeRemove(matchNode *list, Match match);
 
 /**
  * Destroys the matchNode and (if instructed) the contained Match

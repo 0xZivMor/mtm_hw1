@@ -100,6 +100,10 @@ ChessSystem chessCreate()
 
 void chessDestroy(ChessSystem chess)
 {
+  if (NULL == chess) {
+    return;
+  }
+
   mapDestroy(chess->players);
   mapDestroy(chess->tournaments);
   matchNodeDestroyList(chess->matches, true);
@@ -118,13 +122,13 @@ ChessResult chessAddTournament(ChessSystem chess,
 
   VALIDATE_ID(tournament_id)
 
-  if (!validateLocation(tournament_location)) {
-    return CHESS_INVALID_LOCATION;
-  }
-
   // tournament with that id was already added
   if (mapContains(chess->tournaments, &tournament_id)) {
     return CHESS_TOURNAMENT_ALREADY_EXISTS;
+  }
+  
+  if (!validateLocation(tournament_location)) {
+    return CHESS_INVALID_LOCATION;
   }
 
   Tournament tournament = tournamentCreate(tournament_id,
@@ -309,14 +313,12 @@ ChessResult chessSavePlayersLevels(ChessSystem chess, FILE* file)
     int result = fprintf(file, "%d %f\n", *player_id, calcLevel(*player_id, matches));
     if (result < 0) {
       freeId(player_id);
-      fclose(file);
       return CHESS_SAVE_FAILURE;
     }
 
     freeId(player_id);
   }
 
-  fclose(file);
   return CHESS_SUCCESS;
 }
 
@@ -354,12 +356,12 @@ ChessResult chessSaveTournamentStatistics(ChessSystem chess, char* path_file)
                      winner, longest_game, average_game_time, location,
                      num_of_matches, num_of_players);
     if (result < 0) { // writing to file error
-      fclose(stats_file);
+      // fclose(stats_file);
       return CHESS_SAVE_FAILURE;
     }
   }
 
-  fclose(stats_file);
+  // fclose(stats_file);
   if (no_tourmanet_ended) {
     return CHESS_NO_TOURNAMENTS_ENDED;
   }
@@ -453,7 +455,7 @@ static void chessRemoveMatchesByTournament(ChessSystem chess, ChessId tournament
     match = matchNodeGetMatch(node);
     node = matchNodeNext(node);
 
-    matchNodeRemove(chess->matches, match);  // remove the match from the matches list
+    matchNodeRemove(&(chess->matches), match);  // remove the match from the matches list
     matchDestroy(match); // this is the only place where we destroy matches
   }
 }

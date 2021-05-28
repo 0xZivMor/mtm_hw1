@@ -68,27 +68,33 @@ Match matchNodeGetMatch(matchNode node)
   return node->match;
 }
 
-void matchNodeRemove(matchNode list, Match match)
+void matchNodeRemove(matchNode *list, Match match)
 {
-  if(list == NULL || match == NULL) {
+  if (NULL == list || NULL == *list || NULL == match) {
     return;
   }
 
+  matchNode previous = NULL;
+  matchNode head = *list;
+
   // going over the list with 2 pointers; list and previous. 
   // list is always one ahead of previous
-  Match current;
-  matchNode previous = NULL;
-  while(list) {
-    current = matchNodeGetMatch(list);
+  while(head) {
+    Match current = matchNodeGetMatch(head);
     
-    if(!matchCompare(current, match)) {
-      previous->next = list->next; // changing order
-      matchNodeDestroy(list, false);
+    if(!matchCompare(current, match)) {  // found a match
+      
+      if (NULL == previous) {  // match was the first node
+        *list = matchNodeNext(head);
+      } else {
+        previous->next = matchNodeNext(head); // changing order
+      }
+      matchNodeDestroy(head, false);
       return;
     }
     
-    previous = list;
-    list = matchNodeNext(list);
+    previous = head;
+    head = matchNodeNext(head);
   }
 }
 
