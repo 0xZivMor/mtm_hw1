@@ -16,6 +16,13 @@ struct tournament_t {
   int winner;
 };
 
+// used to maintain player's record in the tournament
+typedef struct record {
+  int score;
+  int wins;
+  int losses;
+} Record;
+
 /**
  * returns true if toCheck is in array, false otherwise
  */ 
@@ -75,6 +82,58 @@ static ChessResult updatePlayerScoreAfterForfiet(Tournament tournament,
                                                  ChessId new_winner, 
                                                  ChessId old_winner);
 
+/**
+ * Creates a copy of the provided Record for the Map object.
+ * 
+ * 
+ * @param original_record Recored to be copied
+ * @return New exact copy of the provided Tournament;
+ *         NULL if memory allocation failed
+ */
+static MapDataElement copyRecord(MapDataElement original_record);
+
+/**
+ * Record destroy for GDT maps
+ * 
+ * @param element Record to be destroyed.
+ */
+static void freeRecord(MapDataElement element);
+
+/**
+ * Get the player's score in the tournament
+ * 
+ * @param tournament tournament in question
+ * @param player player in question
+ * @return player's score in the tournament
+ */
+static int getPlayerScore(Tournament tournament, ChessId player);
+
+/**
+ * Get the player's wins count in the tournament
+ * 
+ * @param tournament tournament in question
+ * @param player player in question
+ * @return player's wins in the tournament
+ */
+static int getPlayerWins(Tournament tournament, ChessId player);
+
+/**
+ * Get the player's losses count in the tournament
+ * 
+ * @param tournament tournament in question
+ * @param player player in question
+ * @return player's wins in the tournament
+ */
+static int getPlayerLosses(Tournament tournament, ChessId player);
+
+/**
+ * Calculates the tournament winner
+ * 
+ * @param tournament Tournament in question
+ * @return ID of winner
+ */
+static ChessId decideWinner(Tournament tournament);
+
 Tournament tournamentCreate(ChessId id, const char *location, int max_games_per_player)
 {
   // checking for incorrect parameters
@@ -88,9 +147,9 @@ Tournament tournamentCreate(ChessId id, const char *location, int max_games_per_
 
   tournament->id = id;
   tournament->matches = NULL;
-  tournament->scores = mapCreate(copyId, // copies int
+  tournament->scores = mapCreate(copyRecord,
                                  copyId, 
-                                 freeId, // frees int
+                                 freeRecord,
                                  freeId, 
                                  idCompare);
   RETURN_NULL_ON_NULL(tournament->scores)
@@ -189,25 +248,7 @@ ChessResult tournamentEnd(Tournament tournament)
     return CHESS_NO_GAMES;
   }
 
-  int max_score = -1;
-
-  // going over the players
-  MAP_FOREACH(ChessId *, current_player_id, tournament->scores) {
-    int *current_score = MAP_GET(tournament->scores, current_player_id, ChessId *);
-
-    // replace winner if we got a better result
-    if (*current_score > max_score) {
-      max_score = *current_score;
-      tournament->winner = *current_player_id;
-    } else if (*current_score == max_score) {
-      // choose the one with lower id
-      if (tournament->winner > *current_player_id) {
-        tournament->winner = *current_player_id;
-      }
-    }
-    freeId((MapKeyElement)current_player_id);
-  }
-
+  tournament->winner = decideWinner(tournament);
   tournament->finished = true; // updating status
   return CHESS_SUCCESS;
 }
@@ -434,16 +475,19 @@ static ChessResult updatePlayerScoreAfterForfiet(Tournament tournament,
   }
 
   int change;
+  Record *record = MAP_GET(tournament->scores, &new_winner, Record *);
 
   // previous result was a draw
   if (!old_winner) {
     change = 1;
   } else {  // new winner previouly lost
     change = 2;
+    record->losses--;
   }
 
-  int score = *(MAP_GET(tournament->scores, &new_winner, int *)) + change;
-  IF_MAP_PUT(tournament->scores, &new_winner, &score) {
+  record->score += change;
+  record->wins++;
+  IF_MAP_PUT(tournament->scores, &new_winner, record) {
     return CHESS_OUT_OF_MEMORY;
   }
   return CHESS_SUCCESS;
@@ -491,22 +535,26 @@ static ChessResult verifyGamesLimit(Tournament tournament,
 static ChessResult updatePlayersScores(Tournament tournament, Match match)
 {
   ChessId player1_id = matchGetFirst(match), player2_id = matchGetSecond(match);
-  int player1_score = *(MAP_GET(tournament->scores, &player1_id, int *));
-  int player2_score = *(MAP_GET(tournament->scores, &player2_id, int *));
+  Record *player1_record = MAP_GET(tournament->scores, &player1_id, Record *);
+  Record *player2_record = MAP_GET(tournament->scores, &player2_id, Record *);
   
   ChessId winner; 
   matchGetWinner(match, &winner);
 
   if (!winner) {  // draw
-    player1_score++;
-    player2_score++;
+    player1_record->score++;
+    player2_record->score++;
   } else if (winner == player1_id) {
-    player1_score += 2;
+    player1_record->score += 2;
+    player1_record->wins++;
+    player2_record->losses++;
   } else {
-    player2_score += 2;
+    player2_record->score += 2;
+    player2_record->wins++;
+    player1_record->losses++;
   }
 
-  IF_MAP_PUT(tournament->scores, &player1_id, &player1_score) {
+  IF_MAP_PUT(tournament->scores, &player1_id, player1_record) {
     return CHESS_OUT_OF_MEMORY;
   }
 
@@ -514,7 +562,7 @@ static ChessResult updatePlayersScores(Tournament tournament, Match match)
    * if memory error occures here, we can't undo the change to player1's
    * score because we're already out of memory
    */
-  IF_MAP_PUT(tournament->scores, &player2_id, &player2_score) {
+  IF_MAP_PUT(tournament->scores, &player2_id, player2_record) {
     return CHESS_OUT_OF_MEMORY;
   }
 
@@ -526,17 +574,20 @@ static ChessResult addPlayersIfNotParticipants(Tournament tournament,
                                                ChessId player2)
 {
   bool player1_added = false;
-  int zero = 0;
+  Record record;
+  record.score = 0;
+  record.wins = 0;
+  record.losses = 0;
 
   if (!tournamentIsParticipant(tournament, player1)) {
-    IF_MAP_PUT(tournament->scores, &player1, &zero) {
+    IF_MAP_PUT(tournament->scores, &player1, &record) {
       return CHESS_OUT_OF_MEMORY;
     }
     player1_added = true;
   }
 
   if (!tournamentIsParticipant(tournament, player2)) {
-    IF_MAP_PUT(tournament->scores, &player2, &zero) {
+    IF_MAP_PUT(tournament->scores, &player2, &record) {
       // player1 was added to the tournament on this call, remove it
       if (player1_added) {
         mapRemove(tournament->scores, (MapKeyElement)&player1);
@@ -548,3 +599,78 @@ static ChessResult addPlayersIfNotParticipants(Tournament tournament,
   return CHESS_SUCCESS;
 }
 
+static MapDataElement copyRecord(MapDataElement original_record)
+{
+  Record *original = (Record *)original_record;
+  RETURN_NULL_ON_NULL(original)
+
+  Record *new_record = (Record *)malloc(sizeof(*new_record));
+  RETURN_NULL_ON_NULL(new_record)
+
+  new_record->score = original->score;
+  new_record->wins = original->wins;
+  new_record->losses = original->losses;
+
+  return new_record;
+}
+
+static void freeRecord(MapDataElement element)
+{
+  free(element);
+}
+
+static int getPlayerScore(Tournament tournament, ChessId player)
+{
+  Record *record = MAP_GET(tournament->scores, &player, Record *);
+  return record->score;
+}
+
+static int getPlayerWins(Tournament tournament, ChessId player)
+{
+  Record *record = MAP_GET(tournament->scores, &player, Record *);
+  return record->wins;
+}
+
+static int getPlayerLosses(Tournament tournament, ChessId player)
+{
+  Record *record = MAP_GET(tournament->scores, &player, Record *);
+  return record->losses;
+}
+
+static ChessId decideWinner(Tournament tournament)
+{
+  ChessId winner = 0;
+  int max_score = -1;
+
+  // going over the players
+  MAP_FOREACH(ChessId *, current_player_id, tournament->scores)
+  {
+    int score = getPlayerScore(tournament, *current_player_id);
+
+    // replace winner if we got a better result
+    if (score > max_score) {
+      max_score = score;
+      winner = *current_player_id;
+    } else if (score == max_score) {
+      // choose the player with less losses
+      int losses_diff = getPlayerLosses(tournament, winner) - getPlayerLosses(tournament, *current_player_id);
+      if (losses_diff > 0) { // current player has less losses
+        winner = *current_player_id;
+      } else if (losses_diff == 0) {
+        // choose the one most wins
+        int wins_diff = getPlayerWins(tournament, winner) - getPlayerWins(tournament, *current_player_id);
+        if (wins_diff < 0) { // current player has more wins
+          winner = *current_player_id;
+        } else if (wins_diff == 0) {
+          // choose the one with the lower id
+          if (winner > *current_player_id) {
+            winner = *current_player_id;
+          }
+        }
+      }
+    }
+    freeId(current_player_id);
+  }
+
+  return winner;
+}

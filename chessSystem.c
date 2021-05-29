@@ -92,7 +92,7 @@ static void swap(PlayerRating *p1, PlayerRating *p2);
  *         <0 second is greater; 
  *         0 ratings of the same player 
  */
-static int ratingCompare(PlayerRating *first, PlayerRating *second);
+static double ratingCompare(PlayerRating *first, PlayerRating *second);
 
 ChessSystem chessCreate()
 {
@@ -555,17 +555,17 @@ static void swap(PlayerRating *p1, PlayerRating *p2)
   *p1 = tmp;
 }
 
-static int ratingCompare(PlayerRating *first, PlayerRating *second)
+static double ratingCompare(PlayerRating *first, PlayerRating *second)
 {
   if (first->player == second->player) {
-    return 0;
+    return 0.0;
   }
 
   // both players has the same rating, ID tie break
   if (first->rating == second->rating) {
-    return (int) (second->player - first->player);
+    return (double) (second->player - first->player);
   }
 
-  return (int) (first->rating - second->rating);
+  return first->rating - second->rating;
 }
 
