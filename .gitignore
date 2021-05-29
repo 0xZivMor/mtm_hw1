@@ -1,2 +1,6 @@
 .vscode
+your_output
+expected_output
 *.o
+chess
+compare_files.sh
