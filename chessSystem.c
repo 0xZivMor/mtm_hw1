@@ -6,12 +6,20 @@
 #include "utils.h"
 #include "map.h"
 
-struct chess_system_t
-{
+struct chess_system_t {
   Map tournaments;
   Map players;
   matchNode matches;
 };
+
+
+/**
+ * Private struct used to compile the players rating file
+ */
+typedef struct player_rating_t {
+  ChessId player;
+  double rating;
+} PlayerRating;
 
 /**
  * Returns the winning player according to the winner argument
@@ -56,6 +64,35 @@ static ChessResult addMatch(ChessSystem chess, Tournament tournament, Match matc
  * @return player's level
  */
 static double calcLevel(ChessId player_id, matchNode matches);
+
+/**
+ * Populates the provided array of PlayerRatings and sorts it with accordance
+ * to the specifications: Decending order of levels, ascending order of 
+ * IDs when levels are the same
+ * 
+ * @param chess Chess system involved
+ * @param player_ratings array of PlayerRatings
+ * @param length size fo the provided array
+ */
+static void sortPlayersByRating(ChessSystem chess, PlayerRating *player_ratings, int length);
+
+/**
+ * Swaps two PlayerRatings in an array 
+ */
+static void swap(PlayerRating *p1, PlayerRating *p2);
+
+/**
+ * Compares two PlayerRating instances, with "greater" defined as:
+ * - has higher level
+ * - has the lower ID if levels equal
+ * 
+ * @param first Pointer to first PlayerRating to compare
+ * @param second Pointer to second PlayerRating to compare
+ * @return >0 first is greater; 
+ *         <0 second is greater; 
+ *         0 ratings of the same player 
+ */
+static int ratingCompare(PlayerRating *first, PlayerRating *second);
 
 ChessSystem chessCreate()
 {
@@ -225,21 +262,16 @@ ChessResult chessRemovePlayer(ChessSystem chess, int player_id)
     return CHESS_PLAYER_NOT_EXIST;
   }
 
-  bool removed = false;
   MAP_FOREACH(ChessId *, current_tournament, chess->tournaments) {
     Tournament tournament = MAP_GET(chess->tournaments, current_tournament, Tournament);
     freeId(current_tournament);
     
-    bool removed_once;
-    if (CHESS_OUT_OF_MEMORY == tournamentRemovePlayer(tournament, player_id, &removed_once)) {
+    if (CHESS_OUT_OF_MEMORY == tournamentRemovePlayer(tournament, player_id)) {
       return CHESS_OUT_OF_MEMORY;
     }
-    removed |= removed_once;
   }
 
-  if (removed) { // player was successfully removed from all tournaments
     mapRemove(chess->players, (MapKeyElement) &player_id);
-  }
   return CHESS_SUCCESS;
 }
 
@@ -321,17 +353,23 @@ ChessResult chessSavePlayersLevels(ChessSystem chess, FILE* file)
     return CHESS_NULL_ARGUMENT;
   }
 
-  MAP_FOREACH(ChessId *, player_id, chess->players) {
-    matchNode matches = MAP_GET(chess->players, player_id, matchNode);
+  int players_count = mapGetSize(chess->players);
+  PlayerRating *ratings = malloc(sizeof(*ratings) * players_count);
 
-    int result = fprintf(file, "%d %.2f\n", *player_id, calcLevel(*player_id, matches));
+  sortPlayersByRating(chess, ratings, players_count);
+
+  for (int i = 0; i < players_count; i++) {
+    int result = fprintf(file, 
+                         "%d %.2f\n", 
+                         ratings[i].player, 
+                         ratings[i].rating);
     if (result < 0) {
-      freeId(player_id);
+      free(ratings);
       return CHESS_SAVE_FAILURE;
     }
-    freeId(player_id);
   }
 
+  free(ratings);
   return CHESS_SUCCESS;
 }
 
@@ -484,3 +522,50 @@ static void chessRemoveMatchesByTournament(ChessSystem chess, ChessId tournament
     matchDestroy(match); // this is the only place where we destroy matches
   }
 }
+
+static void sortPlayersByRating(ChessSystem chess, PlayerRating player_ratings[], int length)
+{
+  int i = 0;
+  MAP_FOREACH(ChessId *, player, chess->players) {
+    PlayerRating *rating = player_ratings + i++;
+    matchNode matches = MAP_GET(chess->players, player, matchNode);
+    rating->player = *player;
+    rating->rating = calcLevel(*player, matches);
+    freeId(player);
+  }
+
+  // bubble sort the array
+  bool swapped = true;
+  while (swapped) {
+    swapped = false;
+
+    for (int j = 1; j < length; j++) {
+      if (ratingCompare(&player_ratings[j-1], &player_ratings[j]) < 0) {
+        swap(player_ratings + j, player_ratings + (j - 1));
+        swapped = true;
+      }
+    }
+  }
+}
+
+static void swap(PlayerRating *p1, PlayerRating *p2)
+{
+  PlayerRating tmp = *p2;
+  *p2 = *p1;
+  *p1 = tmp;
+}
+
+static int ratingCompare(PlayerRating *first, PlayerRating *second)
+{
+  if (first->player == second->player) {
+    return 0;
+  }
+
+  // both players has the same rating, ID tie break
+  if (first->rating == second->rating) {
+    return (int) (second->player - first->player);
+  }
+
+  return (int) (first->rating - second->rating);
+}
+

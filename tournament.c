@@ -382,19 +382,16 @@ double tournamentAveragePlayTime(Tournament tournament)
   return total_time / num_of_matches;
 }
 
-ChessResult tournamentRemovePlayer(Tournament tournament, ChessId player_id, bool *removed)
+ChessResult tournamentRemovePlayer(Tournament tournament, ChessId player_id)
 {
   // arguments validation
-  if (NULL == tournament || NULL == removed) {
+  if (NULL == tournament) {
     return CHESS_NULL_ARGUMENT;
   }
 
   if (!tournamentIsParticipant(tournament, player_id)) {
     return CHESS_PLAYER_NOT_EXIST;
   }
-
-  *removed = false;
-
   // tournament has ended, can't remove player
   if (tournamentIsEnded(tournament)) {
     return CHESS_SUCCESS;
@@ -414,7 +411,6 @@ ChessResult tournamentRemovePlayer(Tournament tournament, ChessId player_id, boo
   }
   
   mapRemove(tournament->scores, (MapKeyElement)&player_id);
-  *removed = true;
   return CHESS_SUCCESS;
 }
 

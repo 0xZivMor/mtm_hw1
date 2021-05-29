@@ -64,15 +64,12 @@ char* tournamentGetLocation(Tournament tournament);
  * 
  * @param tournament Tournament to remove the player from
  * @param player_id ID of player to be removed
- * @param removed pointer to boolean, indicating if the player was actually removed
  * @return CHESS_NULL_ARGUMENT - provided argument was NULL; 
  *         CHESS_OUT_OF_MEMORY - memory error occured; 
  *         CHESS_PLAYER_NOT_EXIST - player didn't play in the tournament; 
  *         CHESS_SUCCESS - operation ended successfully. 
  */
-ChessResult tournamentRemovePlayer(Tournament tournament, 
-                                   ChessId player_id, 
-                                   bool *removed);
+ChessResult tournamentRemovePlayer(Tournament tournament, ChessId player_id);
 
 /**
  * Removes a match from a tournament's matches list.

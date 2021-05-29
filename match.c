@@ -78,12 +78,7 @@ ChessResult matchSetWinner(Match match, ChessId winner)
     return CHESS_PLAYER_NOT_EXIST;
   }
 
-  if (winner != matchGetFirst(match)) {
-    match->winner = match->first;
-  } else {
-    match->winner = match->second;
-  }
-
+  match->winner = winner;
   return CHESS_SUCCESS;
 }
 
